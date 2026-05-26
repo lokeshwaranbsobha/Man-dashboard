@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SCL Manpower Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f8faff;--card:#fff;--border:#dbeafe;--t1:#1e3a8a;--t3:#93c5fd;--blue:#1d4ed8;--bd:#1e3a8a;--bm:#3b82f6;--bl:#dbeafe;--bxl:#eff6ff;--red:#dc2626;--rl:#fef2f2;--r:10px;--rs:7px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;font-size:14px;-webkit-text-size-adjust:100%}
+
+/* HEADER */
+.hdr{background:var(--bd);color:#fff;padding:0 16px;display:flex;align-items:center;justify-content:space-between;height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(30,58,138,.2)}
+.hdr-l{display:flex;flex-direction:column}
+.hdr-title{font-size:15px;font-weight:700}
+.hdr-sub{font-size:9px;color:var(--t3);margin-top:1px}
+.hdr-r{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.hdr-date{font-size:10px;color:var(--t3);white-space:nowrap}
+.btn-up{background:rgba(255,255,255,.15);color:#fff;border:1.5px dashed rgba(255,255,255,.5);border-radius:6px;padding:5px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.btn-up input{display:none}
+.up-badge{background:#22c55e;color:#fff;border-radius:10px;padding:1px 5px;font-size:9px;font-weight:700}
+.btn-ai{background:var(--bm);color:#fff;border:none;border-radius:6px;padding:5px 9px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:4px;white-space:nowrap}
+
+/* NAV */
+.nav{background:var(--card);border-bottom:2px solid var(--border);display:flex;padding:0 16px;position:sticky;top:56px;z-index:99;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.tab{padding:10px 14px;font-size:11px;font-weight:500;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;user-select:none}
+.tab.active{color:var(--bd);border-bottom-color:var(--bm);font-weight:700}
+
+/* CONTENT */
+.content{padding:14px 14px 40px}
+.section{display:none}.section.active{display:block}
+
+/* FILTER BAR */
+.fbar{display:flex;align-items:center;gap:6px;margin-bottom:14px;padding:10px 12px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);flex-wrap:wrap}
+.fbar label{font-size:9px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.fsel{padding:5px 7px;border:1.5px solid var(--border);border-radius:6px;font-family:'Inter',sans-serif;font-size:11px;color:var(--bd);background:#fff;outline:none;max-width:150px}
+.fsel:focus{border-color:var(--bm)}
+.fsep{width:1px;height:18px;background:var(--border)}
+.freset{padding:4px 9px;border:1.5px solid var(--bl);border-radius:6px;font-family:'Inter',sans-serif;font-size:10px;color:var(--bd);background:var(--bxl);cursor:pointer;font-weight:600}
+
+/* SUBSEC */
+.ssGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:10px}
+@media(max-width:480px){.ssGrid{grid-template-columns:1fr;gap:8px}}
+.ssCard{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:18px 12px;cursor:pointer;text-align:center;transition:border-color .2s,transform .2s}
+.ssCard:hover{border-color:var(--bm);transform:translateY(-2px)}
+.ssTitle{font-size:13px;font-weight:700;color:var(--bd);margin-bottom:4px}
+.ssSub{font-size:10px;color:#64748b}
+.ssCont{display:none}.ssCont.active{display:block}
+.backBar{display:flex;align-items:center;gap:6px;margin-bottom:14px;padding:8px 12px;background:var(--bxl);border:1px solid var(--border);border-radius:6px;cursor:pointer;width:fit-content}
+.backBar span{font-size:11px;font-weight:600;color:var(--bd)}
+
+/* KPI GRID */
+.kpiGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px}
+@media(min-width:600px){.kpiGrid{grid-template-columns:repeat(auto-fill,minmax(180px,1fr))}}
+.kpiCard{background:var(--card);border:1px solid var(--border);border-top:4px solid var(--bm);border-radius:var(--r);padding:12px 12px 10px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
+.kpiLabel{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b}
+.kpiVal{font-size:20px;font-weight:800;color:var(--bd);line-height:1.15}
+.kpiSub{font-size:9px;color:#64748b}
+.kpiDelta{font-size:9px;font-weight:700;margin-top:1px}
+.kpiDelta.over{color:var(--red)}.kpiDelta.under{color:var(--bm)}
+.kpiBr{display:flex;flex-direction:column;gap:2px;margin-top:5px;padding-top:5px;border-top:1px solid var(--border);width:100%}
+.kpiBrRow{display:flex;justify-content:space-between;font-size:9px}
+.kpiBrRow span:first-child{color:#64748b}
+.kpiBrRow span:last-child{font-weight:600;color:var(--bd)}
+
+/* GROUP LABEL */
+.grpLabel{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--bm);background:var(--bxl);border-left:3px solid var(--bm);padding:5px 10px;border-radius:0 4px 4px 0;margin:12px 0 6px}
+
+/* ATT PILLS */
+.attGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+@media(min-width:500px){.attGrid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}}
+.attPill{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:10px 8px;text-align:center}
+.attVal{font-size:18px;font-weight:800;color:var(--bd)}
+.attLbl{font-size:9px;color:#64748b;margin-top:1px;font-weight:500}
+
+/* NOTICE */
+.noticeGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+@media(min-width:500px){.noticeGrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}}
+.noticeCard{background:var(--card);border:1px solid var(--border);border-top:3px solid var(--bm);border-radius:var(--r);padding:10px 12px;text-align:center;display:flex;flex-direction:column;align-items:center}
+.noticeLbl{font-size:9px;font-weight:700;text-transform:uppercase;color:#64748b}
+.noticeVal{font-size:18px;font-weight:800;color:var(--bd);margin-top:3px}
+.noticeSub{font-size:9px;color:#64748b;margin-top:2px}
+
+/* CARD */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:14px;margin-bottom:14px}
+.cardTitle{font-size:12px;font-weight:700;color:var(--bd);margin-bottom:12px;padding-bottom:7px;border-bottom:1px solid var(--border)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px}
+@media(max-width:600px){.grid2{grid-template-columns:1fr}}
+.chartWrap{position:relative;width:100%}
+
+/* TABLES */
+.tblWrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:11px}
+thead th{background:var(--bxl);color:var(--bd);font-weight:700;font-size:9px;text-transform:uppercase;letter-spacing:.04em;padding:7px 8px;text-align:left;border-bottom:2px solid var(--border);cursor:pointer;white-space:nowrap}
+thead th:hover{background:var(--bl)}
+tbody tr{border-bottom:1px solid #f0f4ff}
+tbody tr:hover{background:var(--bxl)}
+tbody td{padding:6px 8px;color:#374151;white-space:nowrap}
+tbody td:first-child{font-weight:500;color:var(--bd)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;padding:1px 6px;border-radius:10px;font-size:9px;font-weight:700}
+.bRed{background:var(--rl);color:var(--red)}
+.bBlue{background:var(--bl);color:var(--bd)}
+.bGreen{background:#f0fdf4;color:#16a34a}
+.secLabel{font-size:13px;font-weight:700;color:var(--bd);margin-bottom:12px;padding-bottom:5px;border-bottom:2px solid var(--bl)}
+
+/* INTEL */
+#iOverlay{display:none;position:fixed;inset:0;background:rgba(30,58,138,.15);z-index:200}
+#iOverlay.open{display:block}
+#iPanel{position:fixed;top:0;right:-105vw;width:min(390px,100vw);height:100vh;background:var(--card);box-shadow:-4px 0 30px rgba(30,58,138,.18);z-index:201;display:flex;flex-direction:column;transition:right .28s cubic-bezier(.4,0,.2,1)}
+#iPanel.open{right:0}
+.iHdr{background:var(--bd);color:#fff;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.iHdr h2{font-size:13px;font-weight:700}
+.iHdr p{font-size:9px;color:var(--t3);margin-top:1px}
+.iClose{background:rgba(255,255,255,.15);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
+.iBody{flex:1;overflow-y:auto;padding:12px}
+.iSecTitle{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--bm);margin:10px 0 6px}
+.iInsight{background:var(--bxl);border-left:3px solid var(--bm);border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:11px;color:var(--bd);line-height:1.5}
+.iInsight strong{font-weight:700}
+.iAction{background:#e8f0fe;border-left:3px solid var(--bd);border-radius:6px;padding:8px 10px;margin-bottom:6px;font-size:11px;color:var(--bd);line-height:1.5;display:flex;gap:6px}
+.iActNum{font-weight:800;color:var(--bm);min-width:13px}
+.iChat{border-top:1px solid var(--border);padding:10px 12px;flex-shrink:0}
+.iChatTitle{font-size:9px;font-weight:700;color:var(--bd);margin-bottom:7px;text-transform:uppercase;letter-spacing:.06em}
+.chatMsgs{height:190px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+.msg{max-width:92%;padding:7px 10px;border-radius:10px;font-size:11px;line-height:1.5}
+.msgU{align-self:flex-end;background:var(--bm);color:#fff;border-bottom-right-radius:2px}
+.msgA{align-self:flex-start;background:var(--bxl);color:var(--bd);border:1px solid var(--border);border-bottom-left-radius:2px;white-space:pre-wrap}
+.msgT{align-self:flex-start;background:var(--bxl);color:#64748b;border:1px solid var(--border);border-radius:10px;border-bottom-left-radius:2px;padding:7px 11px;font-size:10px;font-style:italic}
+.chatRow{display:flex;gap:6px}
+.chatIn{flex:1;padding:6px 9px;border:1.5px solid var(--border);border-radius:6px;font-family:'Inter',sans-serif;font-size:12px;color:var(--t1);background:#fff;outline:none}
+.chatIn:focus{border-color:var(--bm)}
+.chatSend{background:var(--bm);color:#fff;border:none;border-radius:6px;padding:6px 11px;font-size:12px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:600;min-width:50px}
+.chatSend:disabled{background:#93c5fd;cursor:not-allowed}
+
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-thumb{background:var(--t3);border-radius:3px}
+</style>
+</head>
+<body>
+<!-- LOCK SCREEN -->
+<div id="lockScreen" style="position:fixed;inset:0;background:var(--bd);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+  <div style="text-align:center;color:#fff;margin-bottom:8px;">
+    <div style="font-size:22px;font-weight:800;letter-spacing:.01em;">SCL Manpower Analytics</div>
+    <div style="font-size:11px;color:var(--t3);margin-top:4px;">SOBHA Construction Group</div>
+  </div>
+  <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:28px 32px;text-align:center;width:min(300px,88vw);">
+    <div style="font-size:13px;font-weight:600;color:var(--t3);margin-bottom:16px;text-transform:uppercase;letter-spacing:.08em;">Enter PIN to Access</div>
+    <!-- PIN dots -->
+    <div id="pinDots" style="display:flex;justify-content:center;gap:12px;margin-bottom:20px;">
+      <div class="pinDot" id="d0"></div>
+      <div class="pinDot" id="d1"></div>
+      <div class="pinDot" id="d2"></div>
+      <div class="pinDot" id="d3"></div>
+    </div>
+    <!-- Error msg -->
+    <div id="pinError" style="font-size:11px;color:#f87171;margin-bottom:12px;min-height:16px;"></div>
+    <!-- Numpad -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+      <button class="pinBtn" onclick="pinPress('1')">1</button>
+      <button class="pinBtn" onclick="pinPress('2')">2</button>
+      <button class="pinBtn" onclick="pinPress('3')">3</button>
+      <button class="pinBtn" onclick="pinPress('4')">4</button>
+      <button class="pinBtn" onclick="pinPress('5')">5</button>
+      <button class="pinBtn" onclick="pinPress('6')">6</button>
+      <button class="pinBtn" onclick="pinPress('7')">7</button>
+      <button class="pinBtn" onclick="pinPress('8')">8</button>
+      <button class="pinBtn" onclick="pinPress('9')">9</button>
+      <button class="pinBtn" onclick="pinClear()" style="background:rgba(255,255,255,.08);font-size:11px;">Clear</button>
+      <button class="pinBtn" onclick="pinPress('0')">0</button>
+      <button class="pinBtn" onclick="pinBack()" style="background:rgba(255,255,255,.08);font-size:18px;">⌫</button>
+    </div>
+  </div>
+  <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:4px;">Protected Dashboard</div>
+</div>
+
+<style>
+.pinDot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:transparent;transition:all .2s}
+.pinDot.filled{background:#fff;border-color:#fff}
+.pinDot.shake{animation:shake .3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.pinBtn{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:14px;font-size:18px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s;-webkit-tap-highlight-color:transparent}
+.pinBtn:hover{background:rgba(255,255,255,.22)}
+.pinBtn:active{background:rgba(255,255,255,.3);transform:scale(.95)}
+</style>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="hdr-title">SCL Manpower Analytics</div>
+    <div class="hdr-sub">SOBHA Construction Group — Consolidated Dashboard</div>
+  </div>
+  <div class="hdr-r">
+    <span class="hdr-date" id="hdrDate">26 May 2026</span>
+    <label class="btn-up">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Upload<span class="up-badge" id="upBadge" style="display:none">✓</span>
+      <input type="file" accept=".xlsx,.xls,.xlsb,.csv" onchange="handleUpload(event)">
+    </label>
+    <button class="btn-ai" onclick="openIntel()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      Intelligence
+    </button>
+  </div>
+</header>
+
+<nav class="nav">
+  <div class="tab active" onclick="showTab('overview',this)">Overview</div>
+  <div class="tab" onclick="showTab('ste',this)">Staff, Technician &amp; Entities</div>
+  <div class="tab" onclick="showTab('attendance',this)">Attendance</div>
+  <div class="tab" onclick="showTab('notice',this)">Notice Period</div>
+</nav>
+
+<main class="content">
+
+<!-- ══ OVERVIEW ══ -->
+<div id="sec-overview" class="section active">
+  <div class="fbar">
+    <label>View</label>
+    <select class="fsel" id="ovView" onchange="applyOvFilter()"><option value="all">All</option><option value="staff">Staff</option><option value="tech">Technician</option></select>
+    <div class="fsep"></div>
+    <label>Chart</label>
+    <select class="fsel" id="ovChart" onchange="applyOvFilter()"><option value="both">HC &amp; Payroll</option><option value="hc">Headcount</option><option value="payroll">Payroll</option><option value="att">Attendance</option></select>
+    <button class="freset" onclick="resetF('overview')">Reset</button>
+  </div>
+  <div class="kpiGrid" id="ovKpi"></div>
+  <div id="ovHcPayRow">
+    <div class="card"><div class="cardTitle">Headcount: Approved vs Current</div><div class="chartWrap"><canvas id="cOvHc" style="max-height:260px"></canvas></div></div>
+    <div class="card"><div class="cardTitle">Payroll: Proposed vs Actual (AED M)</div><div class="chartWrap"><canvas id="cOvSal" style="max-height:260px"></canvas></div></div>
+  </div>
+  <div id="ovAttRow">
+    <div class="grid2">
+      <div class="card"><div class="cardTitle">Attendance Status</div><div class="chartWrap"><canvas id="cOvAtt" style="max-height:220px"></canvas></div></div>
+      <div class="card"><div class="cardTitle">Shift Distribution</div><div class="chartWrap"><canvas id="cOvShift" style="max-height:220px"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STE ══ -->
+<div id="sec-ste" class="section">
+  <div id="steSelector">
+    <div class="ssGrid">
+      <div class="ssCard" onclick="showSS('staff')"><div class="ssTitle">Staff</div><div class="ssSub" id="sStaffSub">6,655 headcount</div></div>
+      <div class="ssCard" onclick="showSS('tech')"><div class="ssTitle">Technician</div><div class="ssSub" id="sTechSub">50,515 headcount</div></div>
+      <div class="ssCard" onclick="showSS('ent')"><div class="ssTitle">Entities</div><div class="ssSub" id="sEntSub">10 companies</div></div>
+    </div>
+  </div>
+
+  <!-- Staff -->
+  <div id="ss-staff" class="ssCont">
+    <div class="backBar" onclick="showSS(null)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span>Back</span></div>
+    <div class="fbar">
+      <label>Group</label>
+      <select class="fsel" id="sfGroup" onchange="applyStaffF()"><option value="all">All</option><option value="Operating Unit">Operating Unit</option><option value="Corporate">Corporate</option><option value="Related Entities">Related Entities</option></select>
+      <div class="fsep"></div>
+      <label>Show</label>
+      <select class="fsel" id="sfMetric" onchange="applyStaffF()"><option value="hc">Headcount</option><option value="sal">Salary</option></select>
+      <button class="freset" onclick="resetF('staff')">Reset</button>
+    </div>
+    <div class="secLabel">Staff</div>
+    <div class="kpiGrid" id="staffKpi"></div>
+    <div class="card"><div class="cardTitle" id="staffChTitle">Staff Headcount by Department</div><div class="chartWrap" id="staffChWrap"><canvas id="cStaff"></canvas></div></div>
+    <div class="card">
+      <div class="cardTitle">Staff Department Detail</div>
+      <div class="tblWrap"><table id="tStaff">
+        <thead><tr>
+          <th onclick="sortT('tStaff',0)">Department</th>
+          <th onclick="sortT('tStaff',1)">Group</th>
+          <th class="num" onclick="sortT('tStaff',2)">Appr HC</th>
+          <th class="num" onclick="sortT('tStaff',3)">Curr HC</th>
+          <th class="num" onclick="sortT('tStaff',4)">HC Var</th>
+          <th class="num" onclick="sortT('tStaff',5)">Prop Sal</th>
+          <th class="num" onclick="sortT('tStaff',6)">Curr Sal</th>
+          <th class="num" onclick="sortT('tStaff',7)">Sal Var</th>
+        </tr></thead>
+        <tbody id="tbStaff"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- Tech -->
+  <div id="ss-tech" class="ssCont">
+    <div class="backBar" onclick="showSS(null)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span>Back</span></div>
+    <div class="fbar">
+      <label>Group</label>
+      <select class="fsel" id="tfGroup" onchange="applyTechF()"><option value="all">All</option><option value="Operating Unit">Operating Unit</option><option value="Corporate">Corporate</option><option value="Related Entities">Related Entities</option></select>
+      <div class="fsep"></div>
+      <label>Show</label>
+      <select class="fsel" id="tfMetric" onchange="applyTechF()"><option value="hc">Headcount</option><option value="sal">Salary</option></select>
+      <button class="freset" onclick="resetF('tech')">Reset</button>
+    </div>
+    <div class="secLabel">Technician</div>
+    <div class="kpiGrid" id="techKpi"></div>
+    <div class="card"><div class="cardTitle" id="techChTitle">Technician Headcount by Department</div><div class="chartWrap" id="techChWrap"><canvas id="cTech"></canvas></div></div>
+    <div class="card">
+      <div class="cardTitle">Technician Department Detail</div>
+      <div class="tblWrap"><table id="tTech">
+        <thead><tr>
+          <th onclick="sortT('tTech',0)">Department</th>
+          <th onclick="sortT('tTech',1)">Group</th>
+          <th class="num" onclick="sortT('tTech',2)">Appr HC</th>
+          <th class="num" onclick="sortT('tTech',3)">Curr HC</th>
+          <th class="num" onclick="sortT('tTech',4)">HC Var</th>
+          <th class="num" onclick="sortT('tTech',5)">Prop Sal</th>
+          <th class="num" onclick="sortT('tTech',6)">Curr Sal</th>
+        </tr></thead>
+        <tbody id="tbTech"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- Entities -->
+  <div id="ss-ent" class="ssCont">
+    <div class="backBar" onclick="showSS(null)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span>Back</span></div>
+    <div class="fbar">
+      <label>Company</label>
+      <select class="fsel" id="efComp" onchange="applyEntF()"><option value="all">All Companies</option></select>
+      <div class="fsep"></div>
+      <label>Metric</label>
+      <select class="fsel" id="efMetric" onchange="applyEntF()"><option value="total">Total HC</option><option value="present">Present</option><option value="absent">Absent</option></select>
+      <button class="freset" onclick="resetF('ent')">Reset</button>
+    </div>
+    <div class="secLabel">Entities</div>
+    <div class="kpiGrid" id="entKpi"></div>
+    <div class="card"><div class="cardTitle" id="entChTitle">Entity Headcount</div><div class="chartWrap" id="entChWrap"><canvas id="cEnt"></canvas></div></div>
+    <div class="grid2">
+      <div class="card"><div class="cardTitle">Staff Entities</div><div class="tblWrap"><table id="tEntStaff"><thead><tr><th onclick="sortT('tEntStaff',0)">Department</th><th onclick="sortT('tEntStaff',1)">Group</th><th class="num" onclick="sortT('tEntStaff',2)">Appr HC</th><th class="num" onclick="sortT('tEntStaff',3)">Curr HC</th><th class="num" onclick="sortT('tEntStaff',4)">HC Var</th></tr></thead><tbody id="tbEntStaff"></tbody></table></div></div>
+      <div class="card"><div class="cardTitle">Technician Entities</div><div class="tblWrap"><table id="tEntTech"><thead><tr><th onclick="sortT('tEntTech',0)">Department</th><th onclick="sortT('tEntTech',1)">Group</th><th class="num" onclick="sortT('tEntTech',2)">Appr HC</th><th class="num" onclick="sortT('tEntTech',3)">Curr HC</th><th class="num" onclick="sortT('tEntTech',4)">HC Var</th></tr></thead><tbody id="tbEntTech"></tbody></table></div></div>
+    </div>
+    <div class="card"><div class="cardTitle">Companies</div><div class="tblWrap"><table id="tComp"><thead><tr><th onclick="sortT('tComp',0)">Company</th><th class="num" onclick="sortT('tComp',1)">Total</th><th class="num" onclick="sortT('tComp',2)">Active</th><th class="num" onclick="sortT('tComp',3)">Present</th><th class="num" onclick="sortT('tComp',4)">Absent</th><th class="num" onclick="sortT('tComp',5)">Vacation</th></tr></thead><tbody id="tbComp"></tbody></table></div></div>
+    <div class="card"><div class="cardTitle">Top 20 Designations</div><div class="tblWrap"><table id="tDesig"><thead><tr><th onclick="sortT('tDesig',0)">Designation</th><th class="num" onclick="sortT('tDesig',1)">Count</th></tr></thead><tbody id="tbDesig"></tbody></table></div></div>
+    <div class="card"><div class="cardTitle">Units Detail</div><div class="tblWrap"><table id="tUnit"><thead><tr><th onclick="sortT('tUnit',0)">Unit</th><th class="num" onclick="sortT('tUnit',1)">Total</th><th class="num" onclick="sortT('tUnit',2)">Active</th><th class="num" onclick="sortT('tUnit',3)">Present</th><th class="num" onclick="sortT('tUnit',4)">Absent</th><th class="num" onclick="sortT('tUnit',5)">Vacation</th><th class="num" onclick="sortT('tUnit',6)">Day</th><th class="num" onclick="sortT('tUnit',7)">Night</th></tr></thead><tbody id="tbUnit"></tbody></table></div></div>
+  </div>
+</div>
+
+<!-- ══ ATTENDANCE ══ -->
+<div id="sec-attendance" class="section">
+  <div class="fbar">
+    <label>Unit</label>
+    <select class="fsel" id="afUnit" onchange="applyAttF()"><option value="all">All Units</option></select>
+    <div class="fsep"></div>
+    <label>Status</label>
+    <select class="fsel" id="afStatus" onchange="applyAttF()"><option value="all">All</option><option value="present">Present</option><option value="absent">Absent</option><option value="vacation">Vacation</option></select>
+    <div class="fsep"></div>
+    <label>Shift</label>
+    <select class="fsel" id="afShift" onchange="applyAttF()"><option value="all">All</option><option value="day">Day</option><option value="night">Night</option></select>
+    <button class="freset" onclick="resetF('att')">Reset</button>
+  </div>
+  <div class="attGrid" id="attPills"></div>
+  <div class="grid2">
+    <div class="card"><div class="cardTitle">Attendance Breakdown</div><div class="chartWrap"><canvas id="cAttBrk" style="max-height:240px"></canvas></div></div>
+    <div class="card"><div class="cardTitle">Shift Distribution</div><div class="chartWrap"><canvas id="cAttShift" style="max-height:240px"></canvas></div></div>
+  </div>
+  <div class="card"><div class="cardTitle">Attendance by Unit</div><div class="chartWrap" id="unitAttWrap"><canvas id="cUnitAtt"></canvas></div></div>
+  <div class="card"><div class="cardTitle">Unit Attendance Detail</div><div class="tblWrap"><table id="tAtt"><thead><tr><th onclick="sortT('tAtt',0)">Unit</th><th class="num" onclick="sortT('tAtt',1)">Total</th><th class="num" onclick="sortT('tAtt',2)">Present</th><th class="num" onclick="sortT('tAtt',3)">Absent</th><th class="num" onclick="sortT('tAtt',4)">Vacation</th><th class="num" onclick="sortT('tAtt',5)">%</th><th class="num" onclick="sortT('tAtt',6)">Day</th><th class="num" onclick="sortT('tAtt',7)">Night</th></tr></thead><tbody id="tbAtt"></tbody></table></div></div>
+</div>
+
+<!-- ══ NOTICE ══ -->
+<div id="sec-notice" class="section">
+  <div class="fbar">
+    <label>Category</label>
+    <select class="fsel" id="nfCat" onchange="applyNoticeF()"><option value="all">Staff &amp; Technician</option><option value="staff">Staff</option><option value="tech">Technician</option></select>
+    <div class="fsep"></div>
+    <label>Dept</label>
+    <select class="fsel" id="nfDept" onchange="applyNoticeF()"><option value="all">All Departments</option></select>
+    <button class="freset" onclick="resetF('notice')">Reset</button>
+  </div>
+  <div class="noticeGrid" id="noticeSummary"></div>
+  <div id="nStaffCharts" class="grid2">
+    <div class="card"><div class="cardTitle">Staff Notice Count</div><div class="chartWrap" id="nScWrap"><canvas id="cNSC"></canvas></div></div>
+    <div class="card"><div class="cardTitle">Staff Notice Cost (AED)</div><div class="chartWrap" id="nSvWrap"><canvas id="cNSV"></canvas></div></div>
+  </div>
+  <div id="nTechCharts" class="grid2">
+    <div class="card"><div class="cardTitle">Technician Notice Count</div><div class="chartWrap" id="nTcWrap"><canvas id="cNTC"></canvas></div></div>
+    <div class="card"><div class="cardTitle">Technician Notice Cost (AED)</div><div class="chartWrap" id="nTvWrap"><canvas id="cNTV"></canvas></div></div>
+  </div>
+  <div class="card"><div class="cardTitle">Notice Period Detail</div><div class="tblWrap"><table id="tNotice"><thead><tr><th onclick="sortT('tNotice',0)">Category</th><th onclick="sortT('tNotice',1)">Department</th><th onclick="sortT('tNotice',2)">Group</th><th class="num" onclick="sortT('tNotice',3)">On Notice</th><th class="num" onclick="sortT('tNotice',4)">Cost (AED)</th></tr></thead><tbody id="tbNotice"></tbody></table></div></div>
+</div>
+
+</main>
+
+<!-- INTEL PANEL -->
+<div id="iOverlay" onclick="closeIntel()"></div>
+<div id="iPanel">
+  <div class="iHdr"><div><h2>AI Intelligence</h2><p>SCL Dashboard Data</p></div><button class="iClose" onclick="closeIntel()">✕</button></div>
+  <div class="iBody">
+    <div class="iSecTitle">Key Metrics</div><div id="iInsights"></div>
+    <div class="iSecTitle">Recommended Actions</div><div id="iActions"></div>
+  </div>
+  <div class="iChat">
+    <div class="iChatTitle">Ask About Dashboard Data</div>
+    <div class="chatMsgs" id="chatMsgs"><div class="msg msgA">Hello! Ask me about headcount, payroll, attendance, notice periods or workforce risks.</div></div>
+    <div class="chatRow">
+      <input class="chatIn" id="chatIn" placeholder="Ask about the data..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="chatSend" id="chatBtn" onclick="sendChat()">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const SEED={
+  T:{staffApprHC:6610,staffCurrHC:6655,staffPropSal:53998082,staffCurrSal:54522029,staffNotice:232,staffNoticeCost:1951080,techApprHC:49405,techCurrHC:50515,techPropSal:46551952,techCurrSal:55138330,techNotice:335,techNoticeCost:376420,grandApprHC:56015,grandCurrHC:57170,grandPropSal:100550034,grandCurrSal:109660359,grandNotice:567,grandNoticeCost:2327500,totalActive:50140,totalNotice:315,totalPresent:37270,totalAbsent:10480,totalVacation:2706,totalRecords:50456,dayShift:44887,nightShift:5569},
+  STAFF:[
+    {dept:"SOU 1",            g:"Operating Unit",   aHC:1666,cHC:1728,pSal:13494292,cSal:14224395,notice:39,nCost:321900},
+    {dept:"SOU 2",            g:"Operating Unit",   aHC:1825,cHC:1667,pSal:14291616,cSal:12958950,notice:78,nCost:670000},
+    {dept:"SOU 3",            g:"Operating Unit",   aHC:1377,cHC:1774,pSal:10028335,cSal:12999950,notice:56,nCost:443550},
+    {dept:"Infra",            g:"Operating Unit",   aHC:197, cHC:190, pSal:1722924, cSal:1648090, notice:12,nCost:84480},
+    {dept:"Corporate",        g:"Corporate",        aHC:330, cHC:250, pSal:4704392, cSal:3593996, notice:9, nCost:156750},
+    {dept:"Sobha Facades",    g:"Related Entities", aHC:276, cHC:242, pSal:2605400, cSal:2482730, notice:11,nCost:87100},
+    {dept:"Sobha Modular",    g:"Related Entities", aHC:160, cHC:140, pSal:1313850, cSal:1323525, notice:3, nCost:21500},
+    {dept:"Advanced Manufacturing",g:"Related Entities",aHC:137,cHC:105,pSal:1056911,cSal:973250,notice:7,nCost:59500},
+    {dept:"Latinem Landscaping",g:"Related Entities",aHC:32,cHC:30,pSal:313200,cSal:296200,notice:1,nCost:3700},
+    {dept:"Sobha Concrete",   g:"Related Entities", aHC:46, cHC:39, pSal:463618,  cSal:362865,  notice:3, nCost:16000},
+    {dept:"Sobha Crusher",    g:"Related Entities", aHC:11, cHC:12, pSal:106500,  cSal:110000,  notice:0, nCost:0},
+    {dept:"Sobha Precast",    g:"Related Entities", aHC:18, cHC:20, pSal:311000,  cSal:350000,  notice:1, nCost:20000},
+    {dept:"Latinem Facilities Management",g:"Related Entities",aHC:185,cHC:143,pSal:1320750,cSal:1032043,notice:2,nCost:8100},
+    {dept:"Latinem Securities",g:"Related Entities",aHC:73,cHC:43,pSal:269050,cSal:183510,notice:1,nCost:3000},
+    {dept:"Stay By Latinem",  g:"Related Entities", aHC:15, cHC:13, pSal:149745,  cSal:128025,  notice:0, nCost:0}
+  ],
+  TECH:[
+    {dept:"SOU 1",            g:"Operating Unit",   aHC:15222,cHC:13972,pSal:13699919,cSal:14937035,notice:56,nCost:55850},
+    {dept:"SOU 2",            g:"Operating Unit",   aHC:16122,cHC:15128,pSal:14509393,cSal:15704745,notice:105,nCost:110975},
+    {dept:"SOU 3",            g:"Operating Unit",   aHC:11312,cHC:15913,pSal:10181148,cSal:17191260,notice:102,nCost:119950},
+    {dept:"Infra",            g:"Operating Unit",   aHC:1477, cHC:939,  pSal:1329692, cSal:1153950, notice:16,nCost:19400},
+    {dept:"Corporate",        g:"Corporate",        aHC:43,   cHC:39,   pSal:100513,  cSal:93538,   notice:0, nCost:0},
+    {dept:"Sobha Facades",    g:"Related Entities", aHC:1368, cHC:1219, pSal:1736725, cSal:1644960, notice:13,nCost:16700},
+    {dept:"Sobha Modular",    g:"Related Entities", aHC:1500, cHC:1172, pSal:1860759, cSal:1545635, notice:31,nCost:35600},
+    {dept:"Advanced Manufacturing",g:"Related Entities",aHC:362,cHC:373,pSal:434400,cSal:445985,notice:2,nCost:2000},
+    {dept:"Latinem Landscaping",g:"Related Entities",aHC:188,cHC:185,pSal:200050,cSal:199585,notice:2,nCost:2345},
+    {dept:"Sobha Concrete",   g:"Related Entities", aHC:230, cHC:190, pSal:391000,  cSal:351075,  notice:5, nCost:11400},
+    {dept:"Sobha Crusher",    g:"Related Entities", aHC:25,  cHC:32,  pSal:47100,   cSal:61000,   notice:0, nCost:0},
+    {dept:"Sobha Precast",    g:"Related Entities", aHC:2,   cHC:2,   pSal:3800,    cSal:3800,    notice:0, nCost:0},
+    {dept:"Latinem Facilities Management",g:"Related Entities",aHC:871,cHC:724,pSal:892535,cSal:749425,notice:3,nCost:2200},
+    {dept:"Latinem Securities",g:"Related Entities",aHC:682,cHC:627,pSal:1164918,cSal:1056337,notice:0,nCost:0},
+    {dept:"Stay By Latinem",  g:"Related Entities", aHC:0,  cHC:0,  pSal:0,       cSal:0,       notice:0, nCost:0}
+  ],
+  UNITS:{"SOU 1":{total:13956,active:13897,notice:59,present:9953,absent:3235,vacation:768,day:12586,night:1370},"SOU 2":{total:15089,active:15000,notice:89,present:11343,absent:2977,vacation:769,day:12681,night:2408},"SOU 3":{total:15906,active:15809,notice:96,present:12508,absent:2535,vacation:863,day:14397,night:1509},"Infra":{total:939,active:922,notice:17,present:624,absent:272,vacation:43,day:937,night:2},"LFM":{total:724,active:721,notice:3,present:463,absent:222,vacation:39,day:697,night:27},"LLS":{total:185,active:183,notice:2,present:139,absent:38,vacation:8,day:185,night:0},"LS":{total:627,active:627,notice:0,present:384,absent:195,vacation:48,day:409,night:218},"SAI":{total:184,active:183,notice:1,present:147,absent:36,vacation:1,day:183,night:1},"SAP":{total:78,active:77,notice:1,present:55,absent:20,vacation:3,day:72,night:6},"SC":{total:32,active:32,notice:0,present:31,absent:0,vacation:1,day:32,night:0},"SCI":{total:191,active:186,notice:5,present:94,absent:92,vacation:5,day:188,night:3},"SF":{total:1220,active:1207,notice:13,present:934,absent:247,vacation:39,day:1220,night:0},"SM":{total:1173,active:1144,notice:29,present:509,absent:550,vacation:114,day:1173,night:0},"AMF":{total:111,active:111,notice:0,present:81,absent:27,vacation:3,day:87,night:24},"COE":{total:39,active:39,notice:0,present:5,absent:32,vacation:2,day:38,night:1},"SPS":{total:2,active:2,notice:0,present:0,absent:2,vacation:0,day:2,night:0}},
+  COMP:{"SOBHA CONSTRUCTIONS LLC":{total:46042,active:45780,notice:261,present:34514,absent:9080,vacation:2448},"Sobha Facades Ind LLC":{total:1220,active:1207,notice:13,present:934,absent:247,vacation:39},"Sobha Modular Industries LLC":{total:1173,active:1144,notice:29,present:509,absent:550,vacation:114},"Sobha Advanced Industries LLC OPC":{total:184,active:183,notice:1,present:147,absent:36,vacation:1},"Sobha Advanced Prefab Steel Solutions":{total:78,active:77,notice:1,present:55,absent:20,vacation:3},"Sobha Concrete Industries LLC":{total:191,active:186,notice:5,present:94,absent:92,vacation:5},"SOBHA CRUSHER L.L.C":{total:32,active:32,notice:0,present:31,absent:0,vacation:1},"Latinem Facilities Management":{total:724,active:721,notice:3,present:463,absent:222,vacation:39},"Latinem Landscaping L.L.C":{total:185,active:183,notice:2,present:139,absent:38,vacation:8},"Latinem Securities":{total:627,active:627,notice:0,present:384,absent:195,vacation:48}},
+  DESIG:[["Steel Fixer",4682],["Helper",3607],["Carpenter",3373],["Electrician",2763],["Shuttering Carpenter",2395],["Painter",2248],["Plumber",2081],["Semi Fitter",2003],["Mason - Tile",1867],["Scaffolder",1453],["Ductman",1235],["Mason - Plaster",1196],["Mason - Block",1047],["Gypsum Carpenter",1042],["Fitter",966],["Insulator",921],["Joinery Carpenter",856],["Mason - General",785],["Mason - Pop",615],["Security Guard",603]]
+};
+let D=JSON.parse(JSON.stringify(SEED));
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+Chart.register(ChartDataLabels);
+const fN=(n,d=0)=>n==null?'—':Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fA=n=>n==null?'—':'AED '+(Math.abs(n)>=1e6?(n/1e6).toFixed(2)+'M':Math.abs(n)>=1e3?(n/1e3).toFixed(0)+'K':n.toFixed(0));
+const BL=['#1e3a8a','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe'];
+const gBA=n=>{const o=[];for(let i=0;i<n;i++)o.push(BL[i%BL.length]);return o};
+const lDef={labels:{color:'#1e3a8a',font:{family:'Inter',size:10}}};
+const tDef={bodyFont:{family:'Inter'},titleFont:{family:'Inter'}};
+
+function hOpts(lFn){return{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:60}},plugins:{legend:lDef,tooltip:tDef,datalabels:{display:true,anchor:'end',align:'end',font:{family:'Inter',size:9,weight:'600'},color:'#1e3a8a',formatter:lFn||(v=>fN(v))}},scales:{x:{ticks:{color:'#374151',font:{family:'Inter',size:9}},grid:{color:'#e8f0fe'}},y:{ticks:{color:'#1e3a8a',font:{family:'Inter',size:9,weight:'500'},maxRotation:0},grid:{display:false}}}}}
+function vOpts(lFn){return{responsive:true,maintainAspectRatio:true,layout:{padding:{top:20}},plugins:{legend:lDef,tooltip:tDef,datalabels:{display:true,anchor:'end',align:'end',font:{family:'Inter',size:9,weight:'600'},color:'#1e3a8a',formatter:lFn||(v=>fN(v))}},scales:{x:{ticks:{color:'#374151',font:{family:'Inter',size:10}},grid:{color:'#e8f0fe'}},y:{ticks:{color:'#374151',font:{family:'Inter',size:9}},grid:{color:'#e8f0fe'}}}}}
+function dOpts(){return{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'right',labels:{color:'#1e3a8a',font:{family:'Inter',size:10},boxWidth:10,padding:8}},datalabels:{display:true,color:'#fff',font:{family:'Inter',size:9,weight:'700'},formatter:(v,ctx)=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0);return t>0?((v/t)*100).toFixed(1)+'%':''}}}}}
+
+const cReg={};
+function mkC(id,cfg){
+  const el=document.getElementById(id);
+  if(!el)return;
+  if(cReg[id]){cReg[id].destroy();}
+  cReg[id]=new Chart(el,cfg);
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────────────
+function buildOverview(){
+  const T=D.T;
+  const ap=((T.grandCurrHC-T.grandApprHC)/T.grandApprHC*100).toFixed(1);
+  const sp=((T.grandCurrSal-T.grandPropSal)/T.grandPropSal*100).toFixed(1);
+  const att=(T.totalPresent/T.totalRecords*100).toFixed(1);
+  // No "Other Entities" in overview KPI breakdown — only Staff and Technician
+  document.getElementById('ovKpi').innerHTML=`
+    <div class="kpiCard"><div class="kpiLabel">Grand Approved HC</div><div class="kpiVal">${fN(T.grandApprHC)}</div><div class="kpiSub">Sanctioned</div><div class="kpiBr"><div class="kpiBrRow"><span>Staff</span><span>${fN(T.staffApprHC)}</span></div><div class="kpiBrRow"><span>Technician</span><span>${fN(T.techApprHC)}</span></div></div></div>
+    <div class="kpiCard"><div class="kpiLabel">Grand Current HC</div><div class="kpiVal">${fN(T.grandCurrHC)}</div><div class="kpiSub">Active + Notice</div><div class="kpiDelta over">+${ap}% over approved</div><div class="kpiBr"><div class="kpiBrRow"><span>Staff</span><span>${fN(T.staffCurrHC)}</span></div><div class="kpiBrRow"><span>Technician</span><span>${fN(T.techCurrHC)}</span></div></div></div>
+    <div class="kpiCard"><div class="kpiLabel">Proposed Payroll</div><div class="kpiVal">${fA(T.grandPropSal)}</div><div class="kpiSub">Monthly budget</div><div class="kpiBr"><div class="kpiBrRow"><span>Staff</span><span>${fA(T.staffPropSal)}</span></div><div class="kpiBrRow"><span>Technician</span><span>${fA(T.techPropSal)}</span></div></div></div>
+    <div class="kpiCard"><div class="kpiVal">${fA(T.grandCurrSal)}</div><div class="kpiLabel">Actual Payroll</div><div class="kpiSub">Monthly spend</div><div class="kpiDelta over">+${sp}% over budget</div><div class="kpiBr"><div class="kpiBrRow"><span>Staff</span><span>${fA(T.staffCurrSal)}</span></div><div class="kpiBrRow"><span>Technician</span><span>${fA(T.techCurrSal)}</span></div></div></div>
+    <div class="kpiCard"><div class="kpiLabel">Attendance Today</div><div class="kpiVal">${att}%</div><div class="kpiSub">${fN(T.totalPresent)} of ${fN(T.totalRecords)}</div><div class="kpiBr"><div class="kpiBrRow"><span>Absent</span><span style="color:var(--red)">${fN(T.totalAbsent)}</span></div><div class="kpiBrRow"><span>Vacation</span><span>${fN(T.totalVacation)}</span></div></div></div>`;
+  document.getElementById('sStaffSub').textContent=fN(T.staffCurrHC)+' headcount';
+  document.getElementById('sTechSub').textContent=fN(T.techCurrHC)+' headcount';
+  document.getElementById('sEntSub').textContent=Object.keys(D.COMP).length+' companies';
+  applyOvFilter();
+}
+
+function applyOvFilter(){
+  const T=D.T,vw=document.getElementById('ovView').value,ch=document.getElementById('ovChart').value;
+  document.getElementById('ovHcPayRow').style.display=(ch==='both'||ch==='hc'||ch==='payroll')?'':'none';
+  document.getElementById('ovAttRow').style.display=(ch==='both'||ch==='att')?'':'none';
+  let lbl,ap,cu,pp,ac;
+  if(vw==='staff'){lbl=['Staff'];ap=[T.staffApprHC];cu=[T.staffCurrHC];pp=[+(T.staffPropSal/1e6).toFixed(2)];ac=[+(T.staffCurrSal/1e6).toFixed(2)];}
+  else if(vw==='tech'){lbl=['Technician'];ap=[T.techApprHC];cu=[T.techCurrHC];pp=[+(T.techPropSal/1e6).toFixed(2)];ac=[+(T.techCurrSal/1e6).toFixed(2)];}
+  else{lbl=['Staff','Technician','Total'];ap=[T.staffApprHC,T.techApprHC,T.grandApprHC];cu=[T.staffCurrHC,T.techCurrHC,T.grandCurrHC];pp=[+(T.staffPropSal/1e6).toFixed(2),+(T.techPropSal/1e6).toFixed(2),+(T.grandPropSal/1e6).toFixed(2)];ac=[+(T.staffCurrSal/1e6).toFixed(2),+(T.techCurrSal/1e6).toFixed(2),+(T.grandCurrSal/1e6).toFixed(2)];}
+  if(ch==='both'||ch==='hc')mkC('cOvHc',{type:'bar',data:{labels:lbl,datasets:[{label:'Approved',data:ap,backgroundColor:'#3b82f6',borderRadius:4},{label:'Current',data:cu,backgroundColor:'#1e3a8a',borderRadius:4}]},options:vOpts()});
+  if(ch==='both'||ch==='payroll')mkC('cOvSal',{type:'bar',data:{labels:lbl,datasets:[{label:'Proposed (M)',data:pp,backgroundColor:'#3b82f6',borderRadius:4},{label:'Current (M)',data:ac,backgroundColor:'#1e3a8a',borderRadius:4}]},options:vOpts(v=>v+'M')});
+  if(ch==='both'||ch==='att'){
+    mkC('cOvAtt',{type:'doughnut',data:{labels:['Present','Absent','Vacation'],datasets:[{data:[T.totalPresent,T.totalAbsent,T.totalVacation],backgroundColor:['#1d4ed8','#dc2626','#93c5fd'],borderWidth:0}]},options:dOpts()});
+    mkC('cOvShift',{type:'doughnut',data:{labels:['Day','Night'],datasets:[{data:[T.dayShift,T.nightShift],backgroundColor:['#1e3a8a','#60a5fa'],borderWidth:0}]},options:dOpts()});
+  }
+}
+
+function resetF(tab){
+  if(tab==='overview'){document.getElementById('ovView').value='all';document.getElementById('ovChart').value='both';applyOvFilter();}
+  else if(tab==='staff'){document.getElementById('sfGroup').value='all';document.getElementById('sfMetric').value='hc';applyStaffF();}
+  else if(tab==='tech'){document.getElementById('tfGroup').value='all';document.getElementById('tfMetric').value='hc';applyTechF();}
+  else if(tab==='ent'){document.getElementById('efComp').value='all';document.getElementById('efMetric').value='total';applyEntF();}
+  else if(tab==='att'){document.getElementById('afUnit').value='all';document.getElementById('afStatus').value='all';document.getElementById('afShift').value='all';applyAttF();}
+  else if(tab==='notice'){document.getElementById('nfCat').value='all';document.getElementById('nfDept').value='all';applyNoticeF();}
+}
+
+// ── STAFF ─────────────────────────────────────────────────────────────────────
+function buildStaff(){
+  const T=D.T;
+  document.getElementById('staffKpi').innerHTML=`
+    <div class="kpiCard"><div class="kpiLabel">Approved HC</div><div class="kpiVal">${fN(T.staffApprHC)}</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Current HC</div><div class="kpiVal">${fN(T.staffCurrHC)}</div><div class="kpiDelta over">+${((T.staffCurrHC-T.staffApprHC)/T.staffApprHC*100).toFixed(1)}%</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Proposed Payroll</div><div class="kpiVal">${fA(T.staffPropSal)}</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Actual Payroll</div><div class="kpiVal">${fA(T.staffCurrSal)}</div><div class="kpiDelta over">+${((T.staffCurrSal-T.staffPropSal)/T.staffPropSal*100).toFixed(1)}%</div></div>`;
+  applyStaffF();
+}
+
+function applyStaffF(){
+  const grp=document.getElementById('sfGroup').value,met=document.getElementById('sfMetric').value;
+  let data=D.STAFF.filter(d=>d.cHC>0||d.aHC>0);
+  if(grp!=='all')data=data.filter(d=>d.g===grp);
+  const isSal=met==='sal';
+  document.getElementById('staffChTitle').textContent=isSal?'Staff Salary by Department':'Staff Headcount by Department';
+  const h=Math.max(data.length*42+50,80);
+  document.getElementById('staffChWrap').style.height=h+'px';
+  mkC('cStaff',{type:'bar',data:{labels:data.map(d=>d.dept),datasets:[
+    {label:isSal?'Proposed':'Approved',data:data.map(d=>isSal?d.pSal:d.aHC),backgroundColor:'#3b82f6',borderRadius:3,barThickness:12},
+    {label:isSal?'Current Sal':'Current HC',data:data.map(d=>isSal?d.cSal:d.cHC),backgroundColor:'#1e3a8a',borderRadius:3,barThickness:12}
+  ]},options:hOpts(isSal?v=>fA(v):null)});
+  const tb=document.getElementById('tbStaff');tb.innerHTML='';
+  // Group rows with group label
+  const groups=['Operating Unit','Corporate','Related Entities'];
+  groups.forEach(g=>{
+    const gd=data.filter(r=>r.g===g);
+    if(!gd.length)return;
+    if(grp==='all')tb.innerHTML+=`<tr><td colspan="8" style="background:var(--bxl);font-size:9px;font-weight:700;color:var(--bm);text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;">${g}</td></tr>`;
+    gd.forEach(d=>{
+      const hv=d.cHC-d.aHC,sv=d.cSal-d.pSal;
+      tb.innerHTML+=`<tr>
+        <td>${d.dept}</td><td>${d.g}</td>
+        <td class="num">${fN(d.aHC)}</td><td class="num">${fN(d.cHC)}</td>
+        <td class="num"><span class="badge ${hv>0?'bRed':'bBlue'}">${hv>=0?'+':''}${fN(hv)}</span></td>
+        <td class="num">${fN(d.pSal)}</td><td class="num">${fN(d.cSal)}</td>
+        <td class="num"><span class="badge ${sv>0?'bRed':sv<0?'bGreen':''}">${sv>=0?'+':''}${fN(sv)}</span></td>
+      </tr>`;
+    });
+  });
+}
+
+// ── TECHNICIAN ────────────────────────────────────────────────────────────────
+function buildTech(){
+  const T=D.T;
+  document.getElementById('techKpi').innerHTML=`
+    <div class="kpiCard"><div class="kpiLabel">Approved HC</div><div class="kpiVal">${fN(T.techApprHC)}</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Current HC</div><div class="kpiVal">${fN(T.techCurrHC)}</div><div class="kpiDelta over">+${((T.techCurrHC-T.techApprHC)/T.techApprHC*100).toFixed(1)}%</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Proposed Payroll</div><div class="kpiVal">${fA(T.techPropSal)}</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Actual Payroll</div><div class="kpiVal">${fA(T.techCurrSal)}</div><div class="kpiDelta over">+${((T.techCurrSal-T.techPropSal)/T.techPropSal*100).toFixed(1)}%</div></div>`;
+  applyTechF();
+}
+
+function applyTechF(){
+  const grp=document.getElementById('tfGroup').value,met=document.getElementById('tfMetric').value;
+  let data=D.TECH.filter(d=>d.cHC>0||d.aHC>0);
+  if(grp!=='all')data=data.filter(d=>d.g===grp);
+  const isSal=met==='sal';
+  document.getElementById('techChTitle').textContent=isSal?'Technician Salary by Department':'Technician Headcount by Department';
+  const h=Math.max(data.length*42+50,80);
+  document.getElementById('techChWrap').style.height=h+'px';
+  mkC('cTech',{type:'bar',data:{labels:data.map(d=>d.dept),datasets:[
+    {label:isSal?'Proposed':'Approved',data:data.map(d=>isSal?d.pSal:d.aHC),backgroundColor:'#3b82f6',borderRadius:3,barThickness:12},
+    {label:isSal?'Current Sal':'Current HC',data:data.map(d=>isSal?d.cSal:d.cHC),backgroundColor:'#1e3a8a',borderRadius:3,barThickness:12}
+  ]},options:hOpts(isSal?v=>fA(v):null)});
+  const tb=document.getElementById('tbTech');tb.innerHTML='';
+  const groups=['Operating Unit','Corporate','Related Entities'];
+  groups.forEach(g=>{
+    const gd=data.filter(r=>r.g===g);
+    if(!gd.length)return;
+    if(grp==='all')tb.innerHTML+=`<tr><td colspan="7" style="background:var(--bxl);font-size:9px;font-weight:700;color:var(--bm);text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;">${g}</td></tr>`;
+    gd.forEach(d=>{
+      const hv=d.cHC-d.aHC;
+      tb.innerHTML+=`<tr><td>${d.dept}</td><td>${d.g}</td><td class="num">${fN(d.aHC)}</td><td class="num">${fN(d.cHC)}</td><td class="num"><span class="badge ${hv>0?'bRed':'bBlue'}">${hv>=0?'+':''}${fN(hv)}</span></td><td class="num">${fN(d.pSal)}</td><td class="num">${fN(d.cSal)}</td></tr>`;
+    });
+  });
+}
+
+// ── ENTITIES ──────────────────────────────────────────────────────────────────
+function buildEnt(){
+  const sel=document.getElementById('efComp');
+  sel.innerHTML='<option value="all">All Companies</option>';
+  Object.keys(D.COMP).forEach(n=>sel.innerHTML+=`<option value="${n}">${n}</option>`);
+  applyEntF();
+}
+
+function applyEntF(){
+  const comp=document.getElementById('efComp').value,met=document.getElementById('efMetric').value;
+  let entries=Object.entries(D.COMP);
+  if(comp!=='all')entries=entries.filter(([n])=>n===comp);
+  const grid=document.getElementById('entKpi');grid.innerHTML='';
+  entries.forEach(([name,d])=>{const s=name.length>22?name.slice(0,22)+'…':name;grid.innerHTML+=`<div class="kpiCard"><div class="kpiLabel" title="${name}">${s}</div><div class="kpiVal">${fN(d.total)}</div><div class="kpiSub">Active: ${fN(d.active)}</div></div>`;});
+  const mMap={total:'Total HC',present:'Present',absent:'Absent'};
+  document.getElementById('entChTitle').textContent='Entity '+mMap[met];
+  const lbl=entries.map(([n])=>n),vals=entries.map(([,d])=>d[met]||0);
+  const h=Math.max(lbl.length*42+50,80);
+  document.getElementById('entChWrap').style.height=h+'px';
+  mkC('cEnt',{type:'bar',data:{labels:lbl,datasets:[{label:mMap[met],data:vals,backgroundColor:met==='absent'?'#dc2626':gBA(lbl.length),borderRadius:4}]},options:hOpts()});
+
+  // Staff entities (Related Entities group only)
+  const seData=D.STAFF.filter(d=>d.g==='Related Entities'&&(d.cHC>0||d.aHC>0));
+  const tb1=document.getElementById('tbEntStaff');tb1.innerHTML='';
+  seData.forEach(d=>{const hv=d.cHC-d.aHC;tb1.innerHTML+=`<tr><td>${d.dept}</td><td>${d.g}</td><td class="num">${fN(d.aHC)}</td><td class="num">${fN(d.cHC)}</td><td class="num"><span class="badge ${hv>0?'bRed':'bBlue'}">${hv>=0?'+':''}${fN(hv)}</span></td></tr>`;});
+
+  // Tech entities
+  const teData=D.TECH.filter(d=>d.g==='Related Entities'&&(d.cHC>0||d.aHC>0));
+  const tb2=document.getElementById('tbEntTech');tb2.innerHTML='';
+  teData.forEach(d=>{const hv=d.cHC-d.aHC;tb2.innerHTML+=`<tr><td>${d.dept}</td><td>${d.g}</td><td class="num">${fN(d.aHC)}</td><td class="num">${fN(d.cHC)}</td><td class="num"><span class="badge ${hv>0?'bRed':'bBlue'}">${hv>=0?'+':''}${fN(hv)}</span></td></tr>`;});
+
+  const cb=document.getElementById('tbComp');cb.innerHTML='';
+  entries.forEach(([name,d])=>{cb.innerHTML+=`<tr><td>${name}</td><td class="num">${fN(d.total)}</td><td class="num">${fN(d.active)}</td><td class="num">${fN(d.present)}</td><td class="num" style="color:var(--red)">${fN(d.absent)}</td><td class="num">${fN(d.vacation)}</td></tr>`;});
+  const db=document.getElementById('tbDesig');db.innerHTML='';
+  D.DESIG.forEach(([n,c])=>{db.innerHTML+=`<tr><td>${n}</td><td class="num">${fN(c)}</td></tr>`;});
+  const ub=document.getElementById('tbUnit');ub.innerHTML='';
+  Object.entries(D.UNITS).forEach(([u,d])=>{ub.innerHTML+=`<tr><td>${u}</td><td class="num">${fN(d.total)}</td><td class="num">${fN(d.active)}</td><td class="num">${fN(d.present)}</td><td class="num" style="color:var(--red)">${fN(d.absent)}</td><td class="num">${fN(d.vacation)}</td><td class="num">${fN(d.day)}</td><td class="num">${fN(d.night)}</td></tr>`;});
+}
+
+// ── ATTENDANCE ────────────────────────────────────────────────────────────────
+function buildAtt(){
+  const sel=document.getElementById('afUnit');
+  sel.innerHTML='<option value="all">All Units</option>';
+  Object.keys(D.UNITS).forEach(u=>sel.innerHTML+=`<option value="${u}">${u}</option>`);
+  applyAttF();
+}
+
+function applyAttF(){
+  const uf=document.getElementById('afUnit').value,sf=document.getElementById('afStatus').value,shf=document.getElementById('afShift').value;
+  let units=Object.entries(D.UNITS);
+  if(uf!=='all')units=units.filter(([u])=>u===uf);
+  let tP=0,tA=0,tV=0,tD=0,tN=0,tAll=0;
+  units.forEach(([,d])=>{tP+=d.present;tA+=d.absent;tV+=d.vacation;tD+=d.day;tN+=d.night;tAll+=d.total;});
+  const dP=sf==='all'||sf==='present'?tP:0,dA=sf==='all'||sf==='absent'?tA:0,dV=sf==='all'||sf==='vacation'?tV:0;
+  const dD=shf==='all'||shf==='day'?tD:0,dNt=shf==='all'||shf==='night'?tN:0;
+  document.getElementById('attPills').innerHTML=`
+    <div class="attPill"><div class="attVal">${fN(tAll)}</div><div class="attLbl">Total</div></div>
+    <div class="attPill"><div class="attVal" style="color:var(--bm)">${fN(dP)}</div><div class="attLbl">Present</div></div>
+    <div class="attPill"><div class="attVal" style="color:var(--red)">${fN(dA)}</div><div class="attLbl">Absent</div></div>
+    <div class="attPill"><div class="attVal">${fN(dV)}</div><div class="attLbl">Vacation</div></div>
+    <div class="attPill"><div class="attVal">${fN(dD)}</div><div class="attLbl">Day Shift</div></div>
+    <div class="attPill"><div class="attVal">${fN(dNt)}</div><div class="attLbl">Night Shift</div></div>`;
+  mkC('cAttBrk',{type:'doughnut',data:{labels:['Present','Absent','Vacation'],datasets:[{data:[dP,dA,dV],backgroundColor:['#1d4ed8','#dc2626','#93c5fd'],borderWidth:0}]},options:dOpts()});
+  mkC('cAttShift',{type:'doughnut',data:{labels:['Day','Night'],datasets:[{data:[dD,dNt],backgroundColor:['#1e3a8a','#60a5fa'],borderWidth:0}]},options:dOpts()});
+  const uk=units.map(([u])=>u);
+  const h=Math.max(uk.length*42+50,80);
+  document.getElementById('unitAttWrap').style.height=h+'px';
+  const ds=[];
+  if(sf==='all'||sf==='present')ds.push({label:'Present',data:units.map(([,d])=>d.present),backgroundColor:'#1d4ed8',borderRadius:3,barThickness:8});
+  if(sf==='all'||sf==='absent')ds.push({label:'Absent',data:units.map(([,d])=>d.absent),backgroundColor:'#dc2626',borderRadius:3,barThickness:8});
+  if(sf==='all'||sf==='vacation')ds.push({label:'Vacation',data:units.map(([,d])=>d.vacation),backgroundColor:'#93c5fd',borderRadius:3,barThickness:8});
+  mkC('cUnitAtt',{type:'bar',data:{labels:uk,datasets:ds},options:hOpts()});
+  const tb=document.getElementById('tbAtt');tb.innerHTML='';
+  units.forEach(([u,d])=>{const p=d.total>0?((d.present/d.total)*100).toFixed(1):'0.0';tb.innerHTML+=`<tr><td>${u}</td><td class="num">${fN(d.total)}</td><td class="num" style="color:var(--bd);font-weight:600">${fN(d.present)}</td><td class="num" style="color:var(--red)">${fN(d.absent)}</td><td class="num">${fN(d.vacation)}</td><td class="num">${p}%</td><td class="num">${fN(d.day)}</td><td class="num">${fN(d.night)}</td></tr>`;});
+}
+
+// ── NOTICE ────────────────────────────────────────────────────────────────────
+function buildNotice(){
+  const all=[...new Set([...D.STAFF.map(d=>d.dept),...D.TECH.map(d=>d.dept)])];
+  const ds=document.getElementById('nfDept');
+  ds.innerHTML='<option value="all">All Departments</option>';
+  all.forEach(dep=>ds.innerHTML+=`<option value="${dep}">${dep}</option>`);
+  applyNoticeF();
+}
+
+function applyNoticeF(){
+  const cat=document.getElementById('nfCat').value,dept=document.getElementById('nfDept').value;
+  const showS=cat==='all'||cat==='staff',showT=cat==='all'||cat==='tech';
+  document.getElementById('nStaffCharts').style.display=showS?'':'none';
+  document.getElementById('nTechCharts').style.display=showT?'':'none';
+  let sD=D.STAFF.filter(d=>d.notice>0),tD=D.TECH.filter(d=>d.notice>0);
+  if(dept!=='all'){sD=sD.filter(d=>d.dept===dept);tD=tD.filter(d=>d.dept===dept);}
+  const totN=(showS?sD.reduce((a,d)=>a+d.notice,0):0)+(showT?tD.reduce((a,d)=>a+d.notice,0):0);
+  const totC=(showS?sD.reduce((a,d)=>a+d.nCost,0):0)+(showT?tD.reduce((a,d)=>a+d.nCost,0):0);
+  document.getElementById('noticeSummary').innerHTML=`
+    <div class="noticeCard"><div class="noticeLbl">Total on Notice</div><div class="noticeVal">${fN(totN)}</div><div class="noticeSub">Filtered</div></div>
+    <div class="noticeCard"><div class="noticeLbl">Notice Cost</div><div class="noticeVal">${fA(totC)}</div><div class="noticeSub">Monthly</div></div>
+    ${showS?`<div class="noticeCard"><div class="noticeLbl">Staff on Notice</div><div class="noticeVal">${fN(sD.reduce((a,d)=>a+d.notice,0))}</div><div class="noticeSub">${fA(sD.reduce((a,d)=>a+d.nCost,0))}/mo</div></div>`:''}
+    ${showT?`<div class="noticeCard"><div class="noticeLbl">Technician on Notice</div><div class="noticeVal">${fN(tD.reduce((a,d)=>a+d.notice,0))}</div><div class="noticeSub">${fA(tD.reduce((a,d)=>a+d.nCost,0))}/mo</div></div>`:''}`;
+  if(showS&&sD.length){
+    const h=Math.max(sD.length*42+50,80);
+    document.getElementById('nScWrap').style.height=h+'px';
+    document.getElementById('nSvWrap').style.height=h+'px';
+    mkC('cNSC',{type:'bar',data:{labels:sD.map(d=>d.dept),datasets:[{label:'On Notice',data:sD.map(d=>d.notice),backgroundColor:'#1d4ed8',borderRadius:3}]},options:hOpts()});
+    mkC('cNSV',{type:'bar',data:{labels:sD.map(d=>d.dept),datasets:[{label:'Cost',data:sD.map(d=>d.nCost),backgroundColor:'#3b82f6',borderRadius:3}]},options:hOpts(v=>fA(v))});
+  }
+  if(showT&&tD.length){
+    const h=Math.max(tD.length*42+50,80);
+    document.getElementById('nTcWrap').style.height=h+'px';
+    document.getElementById('nTvWrap').style.height=h+'px';
+    mkC('cNTC',{type:'bar',data:{labels:tD.map(d=>d.dept),datasets:[{label:'On Notice',data:tD.map(d=>d.notice),backgroundColor:'#1e3a8a',borderRadius:3}]},options:hOpts()});
+    mkC('cNTV',{type:'bar',data:{labels:tD.map(d=>d.dept),datasets:[{label:'Cost',data:tD.map(d=>d.nCost),backgroundColor:'#60a5fa',borderRadius:3}]},options:hOpts(v=>fA(v))});
+  }
+  const tb=document.getElementById('tbNotice');tb.innerHTML='';
+  if(showS)sD.forEach(d=>{tb.innerHTML+=`<tr><td><span class="badge bBlue">Staff</span></td><td>${d.dept}</td><td>${d.g}</td><td class="num">${d.notice>0?`<span class="badge bRed">${d.notice}</span>`:0}</td><td class="num">${fN(d.nCost)}</td></tr>`;});
+  if(showT)tD.forEach(d=>{tb.innerHTML+=`<tr><td><span class="badge bBlue" style="background:#e8f0fe">Technician</span></td><td>${d.dept}</td><td>${d.g}</td><td class="num">${d.notice>0?`<span class="badge bRed">${d.notice}</span>`:0}</td><td class="num">${fN(d.nCost)}</td></tr>`;});
+}
+
+// ── INTEL ─────────────────────────────────────────────────────────────────────
+function buildIntel(){
+  const T=D.T;
+  document.getElementById('iInsights').innerHTML=`
+    <div class="iInsight"><strong>Headcount:</strong> Current ${fN(T.grandCurrHC)} vs approved ${fN(T.grandApprHC)} — <strong>+${((T.grandCurrHC-T.grandApprHC)/T.grandApprHC*100).toFixed(1)}% over</strong></div>
+    <div class="iInsight"><strong>Technician Payroll:</strong> ${fA(T.techCurrSal)} vs budget ${fA(T.techPropSal)} — <strong>+${((T.techCurrSal-T.techPropSal)/T.techPropSal*100).toFixed(1)}% over</strong></div>
+    <div class="iInsight"><strong>Notice Exposure:</strong> ${fN(T.grandNotice)} employees, <strong>${fA(T.grandNoticeCost)}/month</strong></div>
+    <div class="iInsight"><strong>Attendance:</strong> ${(T.totalPresent/T.totalRecords*100).toFixed(1)}% present (${fN(T.totalPresent)} of ${fN(T.totalRecords)})</div>`;
+  document.getElementById('iActions').innerHTML=`
+    <div class="iAction"><div class="iActNum">1</div><div>SOU 3 Technician HC 15,913 vs approved 11,312 (+40.7%) — audit required</div></div>
+    <div class="iAction"><div class="iActNum">2</div><div>Staff SOU 2 notice: 78 employees, AED 670K/month cost</div></div>
+    <div class="iAction"><div class="iActNum">3</div><div>Technician payroll overrun ${fA(T.techCurrSal-T.techPropSal)} excess/month</div></div>`;
+}
+
+function openIntel(){document.getElementById('iOverlay').classList.add('open');document.getElementById('iPanel').classList.add('open');}
+function closeIntel(){document.getElementById('iOverlay').classList.remove('open');document.getElementById('iPanel').classList.remove('open');}
+
+// ── AI CHAT ───────────────────────────────────────────────────────────────────
+function getCtx(){
+  const T=D.T;
+  return `You are an AI assistant for the SCL Manpower Analytics Dashboard of SOBHA Construction Group. Only answer questions about the dashboard data. For anything else say: "That question is outside the scope of this dashboard."
+
+DATA (26 May 2026):
+HC: Grand Approved ${fN(T.grandApprHC)}, Current ${fN(T.grandCurrHC)} | Staff: Appr ${fN(T.staffApprHC)}, Curr ${fN(T.staffCurrHC)} | Technician: Appr ${fN(T.techApprHC)}, Curr ${fN(T.techCurrHC)}
+PAYROLL: Grand Proposed ${fA(T.grandPropSal)}, Actual ${fA(T.grandCurrSal)} | Staff: ${fA(T.staffPropSal)} vs ${fA(T.staffCurrSal)} | Technician: ${fA(T.techPropSal)} vs ${fA(T.techCurrSal)} (+${((T.techCurrSal-T.techPropSal)/T.techPropSal*100).toFixed(1)}%)
+NOTICE: Total ${fN(T.grandNotice)}, Cost ${fA(T.grandNoticeCost)}/mo | Staff ${fN(T.staffNotice)} (${fA(T.staffNoticeCost)}/mo) | Technician ${fN(T.techNotice)} (${fA(T.techNoticeCost)}/mo)
+ATTENDANCE: Present ${fN(T.totalPresent)} (${(T.totalPresent/T.totalRecords*100).toFixed(1)}%) | Absent ${fN(T.totalAbsent)} | Vacation ${fN(T.totalVacation)} | Day ${fN(T.dayShift)} | Night ${fN(T.nightShift)}
+STAFF DEPTS:
+${D.STAFF.map(d=>`${d.dept} [${d.g}]: Approved HC ${d.aHC}, Current HC ${d.cHC}, Proposed Sal ${fA(d.pSal)}, Current Sal ${fA(d.cSal)}, Notice ${d.notice}`).join('\n')}
+TECH DEPTS:
+${D.TECH.map(d=>`${d.dept} [${d.g}]: Approved HC ${d.aHC}, Current HC ${d.cHC}, Proposed Sal ${fA(d.pSal)}, Current Sal ${fA(d.cSal)}, Notice ${d.notice}`).join('\n')}
+UNITS: ${Object.entries(D.UNITS).map(([u,d])=>`${u}: Total ${d.total}, Present ${d.present}, Absent ${d.absent}`).join(' | ')}`;
+}
+
+const chatHist=[];
+async function sendChat(){
+  const inp=document.getElementById('chatIn'),q=inp.value.trim();if(!q)return;inp.value='';
+  const msgs=document.getElementById('chatMsgs'),btn=document.getElementById('chatBtn');
+  const um=document.createElement('div');um.className='msg msgU';um.textContent=q;msgs.appendChild(um);
+  const ty=document.createElement('div');ty.className='msg msgT';ty.textContent='Analyzing...';msgs.appendChild(ty);
+  msgs.scrollTop=msgs.scrollHeight;
+  btn.disabled=true;btn.textContent='...';inp.disabled=true;
+  chatHist.push({role:'user',content:q});
+
+  let ans=null;
+
+  // OpenRouter — use free model (meta-llama/llama-3.1-8b-instruct:free)
+  // Falls back to gpt-4o-mini if free model quota exceeded
+  const orModels=[
+    'meta-llama/llama-3.1-8b-instruct:free',
+    'mistralai/mistral-7b-instruct:free',
+    'openai/gpt-4o-mini'
+  ];
+
+  for(const model of orModels){
+    if(ans) break;
+    try{
+      const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+        method:'POST',
+        mode:'cors',
+        headers:{
+          'Content-Type':'application/json',
+          'Authorization':'Bearer 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',
+          'HTTP-Referer':'file://',
+          'X-Title':'SCL Manpower Dashboard',
+          'Origin':'null'
+        },
+        body:JSON.stringify({
+          model:model,
+          max_tokens:600,
+          temperature:0.3,
+          messages:[{role:'system',content:getCtx()},{...chatHist[chatHist.length-1]}]
+        })
+      });
+      const data=await res.json();
+      const txt=data.choices?.[0]?.message?.content||data.error?.message||null;
+      if(txt&&!data.error) ans=txt.trim();
+    }catch(e){/* try next */}
+  }
+
+  if(!ans) ans='Unable to connect to AI. Please check your internet connection and try again.';
+
+  chatHist.push({role:'assistant',content:ans});
+  msgs.removeChild(ty);
+  const am=document.createElement('div');am.className='msg msgA';am.textContent=ans;msgs.appendChild(am);
+  msgs.scrollTop=msgs.scrollHeight;
+  btn.disabled=false;btn.textContent='Send';inp.disabled=false;inp.focus();
+}
+
+// ── TAB / SUBSEC ──────────────────────────────────────────────────────────────
+const built={},ssBuilt={};
+function showTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById('sec-'+name).classList.add('active');
+  if(name==='ste')showSS(null);
+  if(!built[name]){built[name]=true;if(name==='attendance')buildAtt();else if(name==='notice')buildNotice();}
+}
+function showSS(name){
+  document.getElementById('steSelector').style.display=name?'none':'block';
+  ['staff','tech','ent'].forEach(n=>document.getElementById('ss-'+n).classList.toggle('active',n===name));
+  if(name&&!ssBuilt[name]){ssBuilt[name]=true;if(name==='staff')buildStaff();else if(name==='tech')buildTech();else if(name==='ent')buildEnt();}
+}
+
+// ── SORT ──────────────────────────────────────────────────────────────────────
+const sState={};
+function sortT(id,col){
+  const tbl=document.getElementById(id),tb=tbl.querySelector('tbody'),rows=Array.from(tb.querySelectorAll('tr')).filter(r=>r.cells.length>2);
+  const key=id+col,asc=sState[key]!==true;sState[key]=asc;
+  tbl.querySelectorAll('thead th').forEach((th,i)=>{th.classList.toggle('sorted',i===col);th.textContent=th.textContent.replace(' ↑',' ↓').replace(' ↓','')+(i===col?(asc?' ↑':' ↓'):'');});
+  rows.sort((a,b)=>{const av=a.cells[col]?a.cells[col].innerText.replace(/[^0-9.\-]/g,''):'',bv=b.cells[col]?b.cells[col].innerText.replace(/[^0-9.\-]/g,''):'';const an=parseFloat(av),bn=parseFloat(bv);if(!isNaN(an)&&!isNaN(bn))return asc?an-bn:bn-an;return asc?av.localeCompare(bv):bv.localeCompare(av);});
+  rows.forEach(r=>tb.appendChild(r));
+}
+
+// ── UPLOAD ────────────────────────────────────────────────────────────────────
+function handleUpload(e){
+  const file=e.target.files[0];if(!file)return;
+  const ext=file.name.split('.').pop().toLowerCase(),reader=new FileReader();
+  reader.onload=ev=>{try{if(ext==='csv')parseCSV(ev.target.result,file.name);else{const wb=XLSX.read(new Uint8Array(ev.target.result),{type:'array'});parseExcel(wb,file.name);}}catch(err){alert('Error: '+err.message);}};
+  if(ext==='csv')reader.readAsText(file);else reader.readAsArrayBuffer(file);
+  e.target.value='';
+}
+function parseCSV(text,fname){
+  const lines=text.split('\n').filter(l=>l.trim());if(lines.length<2){alert('Empty CSV.');return;}
+  const headers=lines[0].split(',').map(h=>h.trim().replace(/^"|"$/g,''));
+  const rows=[];
+  for(let i=1;i<lines.length;i++){const vals=lines[i].split(',').map(v=>v.trim().replace(/^"|"$/g,''));if(vals.length<3)continue;const obj={};headers.forEach((h,idx)=>obj[h]=vals[idx]||'');rows.push(obj);}
+  processCsv(rows,fname);
+}
+function parseExcel(wb,fname){const ws=wb.Sheets[wb.SheetNames[0]];const rows=XLSX.utils.sheet_to_json(ws,{defval:''});if(rows.length>0)processCsv(rows,fname);else alert('No data found.');}
+function processCsv(rows,fname){
+  const s=rows[0]||{},keys=Object.keys(s);
+  const fc=c=>c.find(x=>keys.some(k=>k.toLowerCase().includes(x.toLowerCase())))||null;
+  const cSt=fc(['Employment Status','Status']),cBio=fc(['Biometric','AttStatus']),cSh=fc(['Shift']),cUnit=fc(['Unit','Business Unit']),cComp=fc(['Company','Entity']),cDes=fc(['Designation','Position']);
+  if(!cBio&&!cSt){alert('Could not detect required columns.');return;}
+  const uMap={},cMap={},dCount={};let tP=0,tA=0,tV=0,tN=0,tAct=0,tDay=0,tNight=0;
+  rows.forEach(row=>{
+    const st=(row[cSt]||'').toLowerCase(),bio=cBio?(row[cBio]||'').toLowerCase():'',sh=cSh?(row[cSh]||'').toLowerCase():'',unit=cUnit?(row[cUnit]||'').trim():'Unknown',comp=cComp?(row[cComp]||'').trim():'Unknown',des=cDes?(row[cDes]||'').trim():'';
+    const isN=st.includes('notice')||bio.includes('notice');
+    const isP=bio==='present'||bio==='p',isA=bio==='absent'||bio==='a',isV=bio.includes('vacation')||bio==='v';
+    const isD=sh.includes('day')||sh==='d',isNt=sh.includes('night')||sh==='n';
+    if(isN)tN++;else tAct++;if(isP)tP++;else if(isA)tA++;else if(isV)tV++;if(isD)tDay++;else if(isNt)tNight++;
+    if(unit){if(!uMap[unit])uMap[unit]={total:0,active:0,notice:0,present:0,absent:0,vacation:0,day:0,night:0};uMap[unit].total++;if(isN)uMap[unit].notice++;else uMap[unit].active++;if(isP)uMap[unit].present++;if(isA)uMap[unit].absent++;if(isV)uMap[unit].vacation++;if(isD)uMap[unit].day++;if(isNt)uMap[unit].night++;}
+    if(comp){if(!cMap[comp])cMap[comp]={total:0,active:0,notice:0,present:0,absent:0,vacation:0};cMap[comp].total++;if(isN)cMap[comp].notice++;else cMap[comp].active++;if(isP)cMap[comp].present++;if(isA)cMap[comp].absent++;if(isV)cMap[comp].vacation++;}
+    if(des)dCount[des]=(dCount[des]||0)+1;
+  });
+  const total=rows.length;
+  D.UNITS=uMap;D.COMP=cMap;D.DESIG=Object.entries(dCount).sort((a,b)=>b[1]-a[1]).slice(0,20);
+  D.T.totalRecords=total;D.T.totalActive=tAct;D.T.totalNotice=tN;D.T.totalPresent=tP;D.T.totalAbsent=tA;D.T.totalVacation=tV;D.T.dayShift=tDay;D.T.nightShift=tNight;D.T.grandCurrHC=total;
+  document.getElementById('upBadge').style.display='inline';
+  document.getElementById('hdrDate').textContent=new Date().toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'});
+  Object.keys(built).forEach(k=>delete built[k]);Object.keys(ssBuilt).forEach(k=>delete ssBuilt[k]);
+  built['overview']=true;buildOverview();buildIntel();
+  alert(`✅ ${total.toLocaleString()} records loaded from "${fname}"`);
+}
+
+// ── PIN LOCK ──────────────────────────────────────────────────────────────────
+const CORRECT_PIN='1111';
+let pinEntry='';
+
+function pinPress(digit){
+  if(pinEntry.length>=4)return;
+  pinEntry+=digit;
+  updateDots();
+  if(pinEntry.length===4) setTimeout(checkPin,150);
+}
+function pinBack(){
+  pinEntry=pinEntry.slice(0,-1);
+  updateDots();
+  document.getElementById('pinError').textContent='';
+}
+function pinClear(){
+  pinEntry='';
+  updateDots();
+  document.getElementById('pinError').textContent='';
+}
+function updateDots(){
+  for(let i=0;i<4;i++){
+    document.getElementById('d'+i).classList.toggle('filled',i<pinEntry.length);
+  }
+}
+function checkPin(){
+  if(pinEntry===CORRECT_PIN){
+    const lock=document.getElementById('lockScreen');
+    lock.style.transition='opacity .4s';
+    lock.style.opacity='0';
+    setTimeout(()=>lock.style.display='none',400);
+  }else{
+    document.getElementById('pinError').textContent='Incorrect PIN. Try again.';
+    document.querySelectorAll('.pinDot').forEach(d=>d.classList.add('shake'));
+    setTimeout(()=>{
+      document.querySelectorAll('.pinDot').forEach(d=>d.classList.remove('shake'));
+      pinEntry='';
+      updateDots();
+    },400);
+  }
+}
+
+// Support keyboard input on desktop
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('lockScreen').style.display==='none')return;
+  if(e.key>='0'&&e.key<='9')pinPress(e.key);
+  else if(e.key==='Backspace')pinBack();
+  else if(e.key==='Escape')pinClear();
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{built['overview']=true;buildOverview();buildIntel();});
+</script>
+</body>
+</html>
