@@ -1,0 +1,14 @@
+{
+  "name": "scl-dashboard",
+  "version": "2.0.0",
+  "description": "SCL Manpower Analytics Dashboard with Supabase persistence, trends and admin",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "express": "^4.22.2"
+  }
+}

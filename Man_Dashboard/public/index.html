@@ -1,0 +1,2145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>SCL Manpower Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/chartjs-plugin-datalabels/2.2.0/chartjs-plugin-datalabels.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f8faff;--card:#fff;--border:#dbeafe;--t1:#1e3a8a;--t3:#93c5fd;--blue:#1d4ed8;--bd:#1e3a8a;--bm:#3b82f6;--bl:#dbeafe;--bxl:#eff6ff;--red:#dc2626;--rl:#fef2f2;--r:10px;--rs:7px}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--t1);min-height:100vh;font-size:14px;-webkit-text-size-adjust:100%;max-width:100%;overflow-x:clip}
+
+/* HEADER */
+/* ═══════════════════════════════════════════════════════
+   MOBILE-FIRST RESPONSIVE STYLES
+   Base = mobile (≤480px), scales up to tablet/desktop
+═══════════════════════════════════════════════════════ */
+
+/* ── HEADER ─────────────────────────────────────────── */
+.hdr{background:var(--bd);color:#fff;padding:0 12px;display:flex;align-items:center;justify-content:space-between;min-height:56px;position:sticky;top:0;z-index:100;box-shadow:0 2px 10px rgba(30,58,138,.2);flex-wrap:nowrap;gap:4px}
+.hdr-l{display:flex;flex-direction:column;flex-shrink:1;min-width:0}
+.hdr-title{font-size:13px;font-weight:800;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-sub{font-size:8px;color:var(--t3);margin-top:1px;display:none}
+.hdr-r{display:flex;align-items:center;gap:4px;flex-shrink:0;flex-wrap:nowrap}
+.hdr-date{font-size:9px;color:var(--t3);white-space:nowrap}
+/* Date selector — hidden on very small screens, shown on tap via JS or wider screens */
+.hdr-datesel{font-size:10px;font-family:'Inter',sans-serif;font-weight:600;color:#fff;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.4);border-radius:6px;padding:4px 6px;cursor:pointer;outline:none;max-width:130px;display:none}
+.hdr-datesel option{color:#1e3a8a;background:#fff}
+.dateGroup{display:none;align-items:center;gap:3px}
+.hdr-date-att{color:#bae6fd}
+.hdr-datesel-att{border-color:rgba(125,211,252,.6);background:rgba(56,189,248,.18)}
+.attDateBanner{background:#ecfeff;border:1.5px solid #a5f3fc;border-radius:10px;padding:9px 14px;margin-bottom:12px;font-size:13px;font-weight:700;color:#0e7490;display:flex;align-items:center;gap:8px}
+.ovDates{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.ovDateChip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:6px 12px;border-radius:8px;border:1.5px solid #c7d2fe;background:#eef2ff;color:#1e3a8a}
+.ovDateChip.att{border-color:#a5f3fc;background:#ecfeff;color:#0e7490}
+.ovDateChip .dim{font-weight:600;color:#64748b}
+.btn-up{background:rgba(255,255,255,.15);color:#fff;border:1.5px dashed rgba(255,255,255,.5);border-radius:6px;padding:4px 6px;font-size:9px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:3px;white-space:nowrap;touch-action:manipulation}
+.btn-up input{display:none}
+.btn-up-att{background:rgba(255,255,255,.1);border-color:rgba(255,255,255,.35)}
+.up-badge{background:#22c55e;color:#fff;border-radius:10px;padding:1px 4px;font-size:8px;font-weight:700}
+.btn-ai{background:var(--bm);color:#fff;border:none;border-radius:6px;padding:4px 6px;font-size:9px;font-weight:700;cursor:pointer;font-family:'Inter',sans-serif;display:flex;align-items:center;gap:3px;white-space:nowrap;touch-action:manipulation}
+
+/* Mobile toolbar below header — holds date picker + overflowing controls */
+.mob-toolbar{display:flex;align-items:center;gap:6px;padding:6px 12px;background:rgba(30,58,138,.96);overflow-x:auto;scrollbar-width:none}
+.mob-toolbar::-webkit-scrollbar{display:none}
+.mob-toolbar .hdr-datesel{display:block;max-width:180px;flex-shrink:0}
+.mob-toolbar .hdr-date{display:block;white-space:nowrap;flex-shrink:0}
+
+/* ── NAV ─────────────────────────────────────────────── */
+.nav{background:var(--card);border-bottom:2px solid var(--border);display:flex;padding:0 4px;position:sticky;top:92px;z-index:99;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+.nav::-webkit-scrollbar{display:none}
+.tab{padding:10px 11px;font-size:10px;font-weight:500;color:#6b7280;cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;user-select:none;touch-action:manipulation;flex-shrink:0}
+.tab.active{color:var(--bd);border-bottom-color:var(--bm);font-weight:700}
+
+/* ── CONTENT ─────────────────────────────────────────── */
+.content{padding:10px 10px 60px}
+.section{display:none}.section.active{display:block}
+
+/* ── FILTER BAR ──────────────────────────────────────── */
+.fbar{display:flex;align-items:center;gap:5px;margin-bottom:12px;padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:var(--r);flex-wrap:wrap}
+.fbar label{font-size:8px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap}
+.fsel{padding:5px 6px;border:1.5px solid var(--border);border-radius:6px;font-family:'Inter',sans-serif;font-size:11px;color:var(--bd);background:#fff;outline:none;max-width:130px;touch-action:manipulation}
+.fsel:focus{border-color:var(--bm)}
+.fsep{width:1px;height:16px;background:var(--border)}
+.freset{padding:4px 8px;border:1.5px solid var(--bl);border-radius:6px;font-family:'Inter',sans-serif;font-size:10px;color:var(--bd);background:var(--bxl);cursor:pointer;font-weight:600;touch-action:manipulation}
+
+/* ── SUBSEC CARDS ────────────────────────────────────── */
+.ssGrid{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:10px}
+.ssCard{background:var(--card);border:2px solid var(--border);border-radius:12px;padding:16px 12px;cursor:pointer;text-align:center;transition:border-color .2s,transform .2s;touch-action:manipulation}
+.ssCard:active{transform:scale(.97)}
+.ssTitle{font-size:13px;font-weight:700;color:var(--bd);margin-bottom:4px}
+.ssSub{font-size:10px;color:#64748b}
+.ssCont{display:none}.ssCont.active{display:block}
+.backBar{display:flex;align-items:center;gap:6px;margin-bottom:14px;padding:8px 12px;background:var(--bxl);border:1px solid var(--border);border-radius:6px;cursor:pointer;width:fit-content;touch-action:manipulation}
+.backBar span{font-size:11px;font-weight:600;color:var(--bd)}
+
+/* ── KPI GRID ────────────────────────────────────────── */
+.kpiGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:14px}
+.kpiCard{background:var(--card);border:1px solid var(--border);border-top:4px solid var(--bm);border-radius:var(--r);padding:10px 10px 8px;display:flex;flex-direction:column;align-items:center;text-align:center;gap:2px}
+.kpiLabel{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#64748b}
+.kpiVal{font-size:18px;font-weight:800;color:var(--bd);line-height:1.15}
+.kpiSub{font-size:8px;color:#64748b}
+.kpiDelta{font-size:8px;font-weight:700;margin-top:1px}
+.kpiDelta.over{color:var(--red)}.kpiDelta.under{color:var(--bm)}
+.kpiBr{display:flex;flex-direction:column;gap:2px;margin-top:5px;padding-top:5px;border-top:1px solid var(--border);width:100%}
+.kpiBrRow{display:flex;justify-content:space-between;font-size:8px}
+.kpiBrRow span:first-child{color:#64748b}
+.kpiBrRow span:last-child{font-weight:600;color:var(--bd)}
+
+/* ── GROUP LABEL ─────────────────────────────────────── */
+.grpLabel{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:var(--bm);background:var(--bxl);border-left:3px solid var(--bm);padding:5px 10px;border-radius:0 4px 4px 0;margin:10px 0 5px}
+
+/* ── ATTENDANCE PILLS ────────────────────────────────── */
+.attGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:12px}
+.attPill{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:8px 6px;text-align:center}
+.attVal{font-size:16px;font-weight:800;color:var(--bd)}
+.attLbl{font-size:8px;color:#64748b;margin-top:1px;font-weight:500}
+
+/* ── NOTICE ──────────────────────────────────────────── */
+.noticeGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:12px}
+.noticeCard{background:var(--card);border:1px solid var(--border);border-top:3px solid var(--bm);border-radius:var(--r);padding:9px 10px;text-align:center;display:flex;flex-direction:column;align-items:center}
+.noticeLbl{font-size:8px;font-weight:700;text-transform:uppercase;color:#64748b}
+.noticeVal{font-size:16px;font-weight:800;color:var(--bd);margin-top:2px}
+.noticeSub{font-size:8px;color:#64748b;margin-top:1px}
+
+/* ── CARDS / GRID ────────────────────────────────────── */
+.card{background:var(--card);border:1px solid var(--border);border-radius:var(--r);padding:12px;margin-bottom:12px}
+.cardTitle{font-size:11px;font-weight:700;color:var(--bd);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+.grid2{display:grid;grid-template-columns:1fr;gap:10px;margin-bottom:10px}
+.chartWrap{position:relative;width:100%}
+
+/* ── TABLES ──────────────────────────────────────────── */
+.tblWrap{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:6px}
+table{width:100%;border-collapse:collapse;font-size:10px}
+thead th{background:var(--bxl);color:var(--bd);font-weight:700;font-size:8px;text-transform:uppercase;letter-spacing:.04em;padding:7px 7px;text-align:left;border-bottom:2px solid var(--border);cursor:pointer;white-space:nowrap;position:sticky;top:0}
+thead th:hover{background:var(--bl)}
+tbody tr{border-bottom:1px solid #f0f4ff}
+tbody tr:hover{background:var(--bxl)}
+tbody td{padding:6px 7px;color:#374151;white-space:nowrap}
+tbody td:first-child{font-weight:500;color:var(--bd)}
+.num{text-align:right;font-variant-numeric:tabular-nums}
+.badge{display:inline-block;padding:1px 5px;border-radius:10px;font-size:8px;font-weight:700}
+.bRed{background:var(--rl);color:var(--red)}
+.bBlue{background:var(--bl);color:var(--bd)}
+.bGreen{background:#f0fdf4;color:#16a34a}
+.secLabel{font-size:12px;font-weight:700;color:var(--bd);margin-bottom:10px;padding-bottom:5px;border-bottom:2px solid var(--bl)}
+
+/* ── INTEL (bottom sheet on mobile) ──────────────────── */
+#iOverlay{display:none;position:fixed;inset:0;background:rgba(30,58,138,.25);z-index:200;backdrop-filter:blur(2px)}
+#iOverlay.open{display:block}
+#iPanel{position:fixed;bottom:-100vh;left:0;right:0;height:90vh;border-radius:20px 20px 0 0;background:var(--card);box-shadow:0 -4px 30px rgba(30,58,138,.2);z-index:201;display:flex;flex-direction:column;transition:bottom .3s cubic-bezier(.4,0,.2,1)}
+#iPanel.open{bottom:0}
+/* drag handle */
+#iPanel::before{content:'';display:block;width:40px;height:4px;background:#cbd5e1;border-radius:2px;margin:10px auto 0;flex-shrink:0}
+.iHdr{background:var(--bd);color:#fff;padding:12px 14px 12px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.iHdr h2{font-size:12px;font-weight:700}
+.iHdr p{font-size:8px;color:var(--t3);margin-top:1px}
+.iClose{background:rgba(255,255,255,.15);border:none;color:#fff;width:26px;height:26px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;touch-action:manipulation}
+.iBody{flex:1;overflow-y:auto;padding:12px;-webkit-overflow-scrolling:touch}
+.iSecTitle{font-size:8px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:var(--bm);margin:10px 0 5px}
+.iInsight{background:var(--bxl);border-left:3px solid var(--bm);border-radius:6px;padding:7px 9px;margin-bottom:5px;font-size:11px;color:var(--bd);line-height:1.5}
+.iInsight strong{font-weight:700}
+.iAction{background:#e8f0fe;border-left:3px solid var(--bd);border-radius:6px;padding:7px 9px;margin-bottom:5px;font-size:11px;color:var(--bd);line-height:1.5;display:flex;gap:6px}
+.iActNum{font-weight:800;color:var(--bm);min-width:13px}
+.iChat{border-top:1px solid var(--border);padding:10px 12px;flex-shrink:0;padding-bottom:max(12px,env(safe-area-inset-bottom))}
+.iChatTitle{font-size:8px;font-weight:700;color:var(--bd);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+.chatMsgs{height:160px;overflow-y:auto;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px;display:flex;flex-direction:column;gap:5px;margin-bottom:7px;-webkit-overflow-scrolling:touch}
+.msg{max-width:92%;padding:6px 9px;border-radius:10px;font-size:11px;line-height:1.5}
+.msgU{align-self:flex-end;background:var(--bm);color:#fff;border-bottom-right-radius:2px}
+.msgA{align-self:flex-start;background:var(--bxl);color:var(--bd);border:1px solid var(--border);border-bottom-left-radius:2px;white-space:pre-wrap}
+.msgT{align-self:flex-start;background:var(--bxl);color:#64748b;border:1px solid var(--border);border-radius:10px;border-bottom-left-radius:2px;padding:6px 10px;font-size:10px;font-style:italic}
+.chatRow{display:flex;gap:5px}
+.chatIn{flex:1;padding:8px 9px;border:1.5px solid var(--border);border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;color:var(--t1);background:#fff;outline:none;-webkit-appearance:none}
+.chatIn:focus{border-color:var(--bm)}
+.chatSend{background:var(--bm);color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:13px;cursor:pointer;font-family:'Inter',sans-serif;font-weight:700;min-width:52px;touch-action:manipulation}
+.chatSend:disabled{background:#93c5fd;cursor:not-allowed}
+
+/* ── SCROLLBAR ───────────────────────────────────────── */
+::-webkit-scrollbar{width:3px;height:3px}
+::-webkit-scrollbar-thumb{background:var(--t3);border-radius:3px}
+
+/* ── TRENDS & ANALYTICS ──────────────────────────────── */
+.trendHeader{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.trendTitle{font-size:16px;font-weight:800;color:var(--t1)}
+.trendSub{font-size:11px;color:#64748b;margin-top:2px}
+.dsBox{padding:4px 0}
+.dsItem{display:flex;gap:8px;padding:9px 10px;margin-bottom:7px;border-radius:8px;background:var(--bxl);border-left:3px solid var(--bm);font-size:12px;color:var(--t1);line-height:1.5}
+.dsItem.warn{background:#fffbeb;border-left-color:#f59e0b}
+.dsItem.risk{background:var(--rl);border-left-color:var(--red)}
+.dsItem.good{background:#f0fdf4;border-left-color:#16a34a}
+.dsIcon{font-size:15px;flex-shrink:0}
+.cntBadge{background:var(--bm);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:700;margin-left:5px}
+
+/* ── ADMIN ───────────────────────────────────────────── */
+.adminLogin{display:flex;justify-content:center;align-items:flex-start;padding-top:30px}
+.adminCard{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:28px 20px;max-width:380px;width:100%;text-align:center;box-shadow:0 4px 24px rgba(30,58,138,.08)}
+.adminIcon{font-size:36px;margin-bottom:8px}
+.adminTitle{font-size:18px;font-weight:800;color:var(--t1);margin-bottom:5px}
+.adminDesc{font-size:12px;color:#64748b;margin-bottom:18px}
+.adminInput{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:8px;font-family:'Inter',sans-serif;font-size:16px;color:var(--t1);outline:none;margin-bottom:10px;-webkit-appearance:none;box-sizing:border-box}
+.adminInput:focus{border-color:var(--bm)}
+.adminBtn{width:100%;padding:12px;background:var(--bd);color:#fff;border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;touch-action:manipulation}
+.adminBtn:active{background:var(--blue)}
+.adminErrMsg{color:var(--red);font-size:11px;margin-top:8px;font-weight:600}
+.userAdd{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
+.delBtn{background:var(--rl);color:var(--red);border:1px solid #fecaca;border-radius:6px;padding:5px 10px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;touch-action:manipulation}
+.delBtn:active{background:var(--red);color:#fff}
+.latestBadge{background:#16a34a;color:#fff;border-radius:6px;padding:2px 7px;font-size:9px;font-weight:700;margin-left:5px}
+
+/* ═══════════════════════════════
+   TABLET (≥600px)
+═══════════════════════════════ */
+@media(min-width:600px){
+  .nav{top:56px}
+  .hdr{padding:0 16px}
+  .hdr-title{font-size:15px}
+  .hdr-sub{display:block}
+  .hdr-datesel{display:block;max-width:170px}
+  .dateGroup{display:flex}
+  .mob-toolbar{display:none}
+  .tab{font-size:11px;padding:10px 14px}
+  .content{padding:14px 14px 50px}
+  .grid2{grid-template-columns:1fr 1fr}
+  .ssGrid{grid-template-columns:repeat(3,1fr)}
+  .kpiGrid{grid-template-columns:repeat(auto-fill,minmax(170px,1fr))}
+  .attGrid{grid-template-columns:repeat(auto-fill,minmax(110px,1fr))}
+  .noticeGrid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .kpiVal{font-size:22px}
+  .attVal{font-size:20px}
+  .noticeVal{font-size:20px}
+  table{font-size:11px}
+  thead th{font-size:9px}
+  /* Intel as side panel on tablet/desktop */
+  #iPanel{top:0;left:auto;right:-105vw;bottom:0;width:min(420px,95vw);height:100vh;border-radius:0;transition:right .28s cubic-bezier(.4,0,.2,1)}
+  #iPanel::before{display:none}
+  #iPanel.open{right:0;bottom:0}
+  .iHdr{padding:14px 16px}
+  .chatMsgs{height:200px}
+  .iChat{padding-bottom:12px}
+  .btn-up{font-size:11px;padding:5px 9px}
+  .btn-ai{font-size:11px;padding:5px 9px}
+  .hdr-r{gap:6px}
+}
+
+/* ═══════════════════════════════
+   DESKTOP (≥960px)
+═══════════════════════════════ */
+@media(min-width:960px){
+  .kpiGrid{grid-template-columns:repeat(auto-fill,minmax(200px,1fr))}
+  .content{padding:16px 20px 60px}
+  .hdr{padding:0 20px}
+  .trendTitle{font-size:18px}
+  table{font-size:12px}
+  thead th{font-size:10px;padding:8px 10px}
+  tbody td{padding:7px 10px}
+}
+</style>
+</head>
+<body>
+<!-- LOCK SCREEN -->
+<div id="lockScreen" style="position:fixed;inset:0;background:var(--bd);z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:20px;">
+  <div style="text-align:center;color:#fff;margin-bottom:8px;">
+    <div style="font-size:22px;font-weight:800;letter-spacing:.01em;">SCL Manpower Analytics</div>
+    <div style="font-size:11px;color:var(--t3);margin-top:4px;">SOBHA Construction Group</div>
+  </div>
+  <div style="background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:16px;padding:28px 32px;text-align:center;width:min(300px,88vw);">
+    <div style="font-size:13px;font-weight:600;color:var(--t3);margin-bottom:16px;text-transform:uppercase;letter-spacing:.08em;">Enter PIN to Access</div>
+    <!-- PIN dots -->
+    <div id="pinDots" style="display:flex;justify-content:center;gap:12px;margin-bottom:20px;">
+      <div class="pinDot" id="d0"></div>
+      <div class="pinDot" id="d1"></div>
+      <div class="pinDot" id="d2"></div>
+      <div class="pinDot" id="d3"></div>
+    </div>
+    <!-- Error msg -->
+    <div id="pinError" style="font-size:11px;color:#f87171;margin-bottom:12px;min-height:16px;"></div>
+    <!-- Numpad -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;">
+      <button class="pinBtn" onclick="pinPress('1')">1</button>
+      <button class="pinBtn" onclick="pinPress('2')">2</button>
+      <button class="pinBtn" onclick="pinPress('3')">3</button>
+      <button class="pinBtn" onclick="pinPress('4')">4</button>
+      <button class="pinBtn" onclick="pinPress('5')">5</button>
+      <button class="pinBtn" onclick="pinPress('6')">6</button>
+      <button class="pinBtn" onclick="pinPress('7')">7</button>
+      <button class="pinBtn" onclick="pinPress('8')">8</button>
+      <button class="pinBtn" onclick="pinPress('9')">9</button>
+      <button class="pinBtn" onclick="pinClear()" style="background:rgba(255,255,255,.08);font-size:11px;">Clear</button>
+      <button class="pinBtn" onclick="pinPress('0')">0</button>
+      <button class="pinBtn" onclick="pinBack()" style="background:rgba(255,255,255,.08);font-size:18px;">⌫</button>
+    </div>
+  </div>
+  <div style="font-size:10px;color:rgba(255,255,255,.3);margin-top:4px;">Protected Dashboard</div>
+</div>
+
+<style>
+.pinDot{width:14px;height:14px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:transparent;transition:all .2s}
+.pinDot.filled{background:#fff;border-color:#fff}
+.pinDot.shake{animation:shake .3s ease}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-5px)}40%{transform:translateX(5px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
+.pinBtn{background:rgba(255,255,255,.12);color:#fff;border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:14px;font-size:18px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif;transition:background .15s;-webkit-tap-highlight-color:transparent}
+.pinBtn:hover{background:rgba(255,255,255,.22)}
+.pinBtn:active{background:rgba(255,255,255,.3);transform:scale(.95)}
+</style>
+
+<header class="hdr">
+  <div class="hdr-l">
+    <div class="hdr-title">SCL Manpower Analytics</div>
+    <div class="hdr-sub">SOBHA Construction Group — Consolidated Dashboard</div>
+  </div>
+  <div class="hdr-r">
+    <div class="dateGroup">
+      <span class="hdr-date" id="hdrDate" style="display:none">—</span>
+      <select class="hdr-datesel" id="reportDateSel" onchange="viewReportDate(this.value)" title="View a saved Report date">
+        <option value="">📅 Report date…</option>
+      </select>
+    </div>
+    <div class="dateGroup">
+      <span class="hdr-date hdr-date-att" id="hdrAttDate" style="display:none">—</span>
+      <select class="hdr-datesel hdr-datesel-att" id="attDateSel" onchange="viewAttendanceDate(this.value)" title="View a saved Attendance date">
+        <option value="">🕑 Attendance date…</option>
+      </select>
+    </div>
+    <label class="btn-up" title="Upload Manpower Report (xlsx/xlsb)">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Report<span class="up-badge" id="upBadgeReport" style="display:none">✓</span>
+      <input type="file" accept=".xlsx,.xls,.xlsb" onchange="handleReportUpload(event)">
+    </label>
+    <label class="btn-up btn-up-att" title="Upload Attendance CSV">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      Attendance<span class="up-badge" id="upBadgeAtt" style="display:none">✓</span>
+      <input type="file" accept=".csv,.xlsx,.xls" onchange="handleAttendanceUpload(event)">
+    </label>
+    <button class="btn-ai" onclick="openIntel()">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+      Intelligence
+    </button>
+  </div>
+</header>
+
+<!-- Mobile toolbar: date indicator + date selector (hidden on ≥600px via CSS) -->
+<div class="mob-toolbar" id="mobToolbar">
+  <span class="hdr-date" id="hdrDateMob" style="display:none">R: —</span>
+  <select class="hdr-datesel" id="reportDateSelMob" onchange="viewReportDate(this.value)" title="Report date">
+    <option value="">📅 Report date…</option>
+  </select>
+  <span class="hdr-date hdr-date-att" id="hdrAttDateMob" style="display:none">A: —</span>
+  <select class="hdr-datesel hdr-datesel-att" id="attDateSelMob" onchange="viewAttendanceDate(this.value)" title="Attendance date">
+    <option value="">🕑 Attendance date…</option>
+  </select>
+</div>
+
+<nav class="nav">
+  <div class="tab active" onclick="showTab('overview',this)">Overview</div>
+  <div class="tab" onclick="showTab('ste',this)">Staff, Technician &amp; Entities</div>
+  <div class="tab" onclick="showTab('attendance',this)">Attendance</div>
+  <div class="tab" onclick="showTab('notice',this)">Notice Period</div>
+  <div class="tab" onclick="showTab('trends',this)">📈 Trends &amp; Analytics</div>
+  <div class="tab" onclick="showTab('admin',this)">⚙️ Admin</div>
+</nav>
+
+<main class="content">
+
+<!-- ══ OVERVIEW ══ -->
+<div id="sec-overview" class="section active">
+  <div class="ovDates" id="ovDates"></div>
+  <div class="fbar">
+    <label>View</label>
+    <select class="fsel" id="ovView" onchange="applyOvFilter()"><option value="all">All</option><option value="staff">Staff</option><option value="tech">Technician</option></select>
+    <div class="fsep"></div>
+    <label>Chart</label>
+    <select class="fsel" id="ovChart" onchange="applyOvFilter()"><option value="both">HC &amp; Payroll</option><option value="hc">Headcount</option><option value="payroll">Payroll</option><option value="att">Attendance</option></select>
+    <button class="freset" onclick="resetF('overview')">Reset</button>
+  </div>
+  <div class="kpiGrid" id="ovKpi"></div>
+  <div id="ovHcPayRow">
+    <div class="card"><div class="cardTitle">Headcount: Approved vs Current</div><div class="chartWrap"><canvas id="cOvHc" style="max-height:260px"></canvas></div></div>
+    <div class="card"><div class="cardTitle">Payroll: Proposed vs Actual (AED M)</div><div class="chartWrap"><canvas id="cOvSal" style="max-height:260px"></canvas></div></div>
+  </div>
+  <div id="ovAttRow">
+    <div class="grid2">
+      <div class="card"><div class="cardTitle" id="ovAttTitle">Attendance Status</div><div class="chartWrap"><canvas id="cOvAtt" style="max-height:220px"></canvas></div></div>
+      <div class="card"><div class="cardTitle" id="ovShiftTitle">Shift Distribution</div><div class="chartWrap"><canvas id="cOvShift" style="max-height:220px"></canvas></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ STE ══ -->
+<div id="sec-ste" class="section">
+  <div id="steSelector">
+    <div class="ssGrid">
+      <div class="ssCard" onclick="showSS('staff')"><div class="ssTitle">Staff</div><div class="ssSub" id="sStaffSub">6,655 headcount</div></div>
+      <div class="ssCard" onclick="showSS('tech')"><div class="ssTitle">Technician</div><div class="ssSub" id="sTechSub">50,515 headcount</div></div>
+      <div class="ssCard" onclick="showSS('ent')"><div class="ssTitle">Entities</div><div class="ssSub" id="sEntSub">10 companies</div></div>
+    </div>
+  </div>
+
+  <!-- Staff -->
+  <div id="ss-staff" class="ssCont">
+    <div class="backBar" onclick="showSS(null)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span>Back</span></div>
+    <div class="fbar">
+      <label>Group</label>
+      <select class="fsel" id="sfGroup" onchange="applyStaffF()"><option value="all">All</option><option value="Operating Unit">Operating Unit</option><option value="Corporate">Corporate</option><option value="Related Entities">Related Entities</option></select>
+      <div class="fsep"></div>
+      <label>Show</label>
+      <select class="fsel" id="sfMetric" onchange="applyStaffF()"><option value="hc">Headcount</option><option value="sal">Salary</option></select>
+      <button class="freset" onclick="resetF('staff')">Reset</button>
+    </div>
+    <div class="secLabel">Staff</div>
+    <div class="kpiGrid" id="staffKpi"></div>
+    <div class="card"><div class="cardTitle" id="staffChTitle">Staff Headcount by Department</div><div class="chartWrap" id="staffChWrap"><canvas id="cStaff"></canvas></div></div>
+    <div class="card">
+      <div class="cardTitle">Staff Department Detail</div>
+      <div class="tblWrap"><table id="tStaff">
+        <thead><tr>
+          <th onclick="sortT('tStaff',0)">Department</th>
+          <th onclick="sortT('tStaff',1)">Group</th>
+          <th class="num" onclick="sortT('tStaff',2)">Appr HC</th>
+          <th class="num" onclick="sortT('tStaff',3)">Curr HC</th>
+          <th class="num" onclick="sortT('tStaff',4)">HC Var</th>
+          <th class="num" onclick="sortT('tStaff',5)">Prop Sal</th>
+          <th class="num" onclick="sortT('tStaff',6)">Curr Sal</th>
+          <th class="num" onclick="sortT('tStaff',7)">Sal Var</th>
+        </tr></thead>
+        <tbody id="tbStaff"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- Tech -->
+  <div id="ss-tech" class="ssCont">
+    <div class="backBar" onclick="showSS(null)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span>Back</span></div>
+    <div class="fbar">
+      <label>Group</label>
+      <select class="fsel" id="tfGroup" onchange="applyTechF()"><option value="all">All</option><option value="Operating Unit">Operating Unit</option><option value="Corporate">Corporate</option><option value="Related Entities">Related Entities</option></select>
+      <div class="fsep"></div>
+      <label>Show</label>
+      <select class="fsel" id="tfMetric" onchange="applyTechF()"><option value="hc">Headcount</option><option value="sal">Salary</option></select>
+      <button class="freset" onclick="resetF('tech')">Reset</button>
+    </div>
+    <div class="secLabel">Technician</div>
+    <div class="kpiGrid" id="techKpi"></div>
+    <div class="card"><div class="cardTitle" id="techChTitle">Technician Headcount by Department</div><div class="chartWrap" id="techChWrap"><canvas id="cTech"></canvas></div></div>
+    <div class="card">
+      <div class="cardTitle">Technician Department Detail</div>
+      <div class="tblWrap"><table id="tTech">
+        <thead><tr>
+          <th onclick="sortT('tTech',0)">Department</th>
+          <th onclick="sortT('tTech',1)">Group</th>
+          <th class="num" onclick="sortT('tTech',2)">Appr HC</th>
+          <th class="num" onclick="sortT('tTech',3)">Curr HC</th>
+          <th class="num" onclick="sortT('tTech',4)">HC Var</th>
+          <th class="num" onclick="sortT('tTech',5)">Prop Sal</th>
+          <th class="num" onclick="sortT('tTech',6)">Curr Sal</th>
+        </tr></thead>
+        <tbody id="tbTech"></tbody>
+      </table></div>
+    </div>
+  </div>
+
+  <!-- Entities -->
+  <div id="ss-ent" class="ssCont">
+    <div class="backBar" onclick="showSS(null)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#1e3a8a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></svg><span>Back</span></div>
+    <div class="fbar">
+      <label>Company</label>
+      <select class="fsel" id="efComp" onchange="applyEntF()"><option value="all">All Companies</option></select>
+      <div class="fsep"></div>
+      <label>Metric</label>
+      <select class="fsel" id="efMetric" onchange="applyEntF()"><option value="total">Total HC</option><option value="present">Present</option><option value="absent">Absent</option></select>
+      <button class="freset" onclick="resetF('ent')">Reset</button>
+    </div>
+    <div class="secLabel">Entities</div>
+    <div class="kpiGrid" id="entKpi"></div>
+    <div class="card"><div class="cardTitle" id="entChTitle">Entity Headcount</div><div class="chartWrap" id="entChWrap"><canvas id="cEnt"></canvas></div></div>
+    <div class="grid2">
+      <div class="card"><div class="cardTitle">Staff Entities</div><div class="tblWrap"><table id="tEntStaff"><thead><tr><th onclick="sortT('tEntStaff',0)">Department</th><th onclick="sortT('tEntStaff',1)">Group</th><th class="num" onclick="sortT('tEntStaff',2)">Appr HC</th><th class="num" onclick="sortT('tEntStaff',3)">Curr HC</th><th class="num" onclick="sortT('tEntStaff',4)">HC Var</th></tr></thead><tbody id="tbEntStaff"></tbody></table></div></div>
+      <div class="card"><div class="cardTitle">Technician Entities</div><div class="tblWrap"><table id="tEntTech"><thead><tr><th onclick="sortT('tEntTech',0)">Department</th><th onclick="sortT('tEntTech',1)">Group</th><th class="num" onclick="sortT('tEntTech',2)">Appr HC</th><th class="num" onclick="sortT('tEntTech',3)">Curr HC</th><th class="num" onclick="sortT('tEntTech',4)">HC Var</th></tr></thead><tbody id="tbEntTech"></tbody></table></div></div>
+    </div>
+    <div class="card"><div class="cardTitle">Companies</div><div class="tblWrap"><table id="tComp"><thead><tr><th onclick="sortT('tComp',0)">Company</th><th class="num" onclick="sortT('tComp',1)">Total</th><th class="num" onclick="sortT('tComp',2)">Active</th><th class="num" onclick="sortT('tComp',3)">Present</th><th class="num" onclick="sortT('tComp',4)">Absent</th><th class="num" onclick="sortT('tComp',5)">Vacation</th></tr></thead><tbody id="tbComp"></tbody></table></div></div>
+    <div class="card"><div class="cardTitle">Top 20 Designations</div><div class="tblWrap"><table id="tDesig"><thead><tr><th onclick="sortT('tDesig',0)">Designation</th><th class="num" onclick="sortT('tDesig',1)">Count</th></tr></thead><tbody id="tbDesig"></tbody></table></div></div>
+    <div class="card"><div class="cardTitle">Units Detail</div><div class="tblWrap"><table id="tUnit"><thead><tr><th onclick="sortT('tUnit',0)">Unit</th><th class="num" onclick="sortT('tUnit',1)">Total</th><th class="num" onclick="sortT('tUnit',2)">Active</th><th class="num" onclick="sortT('tUnit',3)">Present</th><th class="num" onclick="sortT('tUnit',4)">Absent</th><th class="num" onclick="sortT('tUnit',5)">Vacation</th><th class="num" onclick="sortT('tUnit',6)">Day</th><th class="num" onclick="sortT('tUnit',7)">Night</th></tr></thead><tbody id="tbUnit"></tbody></table></div></div>
+  </div>
+</div>
+
+<!-- ══ ATTENDANCE ══ -->
+<div id="sec-attendance" class="section">
+  <div class="fbar">
+    <label>Unit</label>
+    <select class="fsel" id="afUnit" onchange="applyAttF()"><option value="all">All Units</option></select>
+    <div class="fsep"></div>
+    <label>Status</label>
+    <select class="fsel" id="afStatus" onchange="applyAttF()"><option value="all">All</option><option value="present">Present</option><option value="absent">Absent</option><option value="vacation">Vacation</option></select>
+    <div class="fsep"></div>
+    <label>Shift</label>
+    <select class="fsel" id="afShift" onchange="applyAttF()"><option value="all">All</option><option value="day">Day</option><option value="night">Night</option></select>
+    <button class="freset" onclick="resetF('att')">Reset</button>
+  </div>
+  <div class="attDateBanner" id="attDateBanner" style="display:none"></div>
+  <div class="attGrid" id="attPills"></div>
+  <div class="grid2">
+    <div class="card"><div class="cardTitle" id="attBrkTitle">Attendance Breakdown</div><div class="chartWrap"><canvas id="cAttBrk" style="max-height:240px"></canvas></div></div>
+    <div class="card"><div class="cardTitle">Shift Distribution</div><div class="chartWrap"><canvas id="cAttShift" style="max-height:240px"></canvas></div></div>
+  </div>
+  <div class="card"><div class="cardTitle" id="unitAttTitle">Attendance by Unit</div><div class="chartWrap" id="unitAttWrap"><canvas id="cUnitAtt"></canvas></div></div>
+  <div class="card"><div class="cardTitle" id="unitDetailTitle">Unit Attendance Detail</div><div class="tblWrap"><table id="tAtt"><thead><tr><th onclick="sortT('tAtt',0)">Unit</th><th class="num" onclick="sortT('tAtt',1)">Total</th><th class="num" onclick="sortT('tAtt',2)">Present</th><th class="num" onclick="sortT('tAtt',3)">Absent</th><th class="num" onclick="sortT('tAtt',4)">Vacation</th><th class="num" onclick="sortT('tAtt',5)">%</th><th class="num" onclick="sortT('tAtt',6)">Day</th><th class="num" onclick="sortT('tAtt',7)">Night</th></tr></thead><tbody id="tbAtt"></tbody></table></div></div>
+</div>
+
+<!-- ══ NOTICE ══ -->
+<div id="sec-notice" class="section">
+  <div class="fbar">
+    <label>Category</label>
+    <select class="fsel" id="nfCat" onchange="applyNoticeF()"><option value="all">Staff &amp; Technician</option><option value="staff">Staff</option><option value="tech">Technician</option></select>
+    <div class="fsep"></div>
+    <label>Dept</label>
+    <select class="fsel" id="nfDept" onchange="applyNoticeF()"><option value="all">All Departments</option></select>
+    <button class="freset" onclick="resetF('notice')">Reset</button>
+  </div>
+  <div class="noticeGrid" id="noticeSummary"></div>
+  <div id="nStaffCharts" class="grid2">
+    <div class="card"><div class="cardTitle">Staff Notice Count</div><div class="chartWrap" id="nScWrap"><canvas id="cNSC"></canvas></div></div>
+    <div class="card"><div class="cardTitle">Staff Notice Cost (AED)</div><div class="chartWrap" id="nSvWrap"><canvas id="cNSV"></canvas></div></div>
+  </div>
+  <div id="nTechCharts" class="grid2">
+    <div class="card"><div class="cardTitle">Technician Notice Count</div><div class="chartWrap" id="nTcWrap"><canvas id="cNTC"></canvas></div></div>
+    <div class="card"><div class="cardTitle">Technician Notice Cost (AED)</div><div class="chartWrap" id="nTvWrap"><canvas id="cNTV"></canvas></div></div>
+  </div>
+  <div class="card"><div class="cardTitle">Notice Period Detail</div><div class="tblWrap"><table id="tNotice"><thead><tr><th onclick="sortT('tNotice',0)">Category</th><th onclick="sortT('tNotice',1)">Department</th><th onclick="sortT('tNotice',2)">Group</th><th class="num" onclick="sortT('tNotice',3)">On Notice</th><th class="num" onclick="sortT('tNotice',4)">Cost (AED)</th></tr></thead><tbody id="tbNotice"></tbody></table></div></div>
+</div>
+
+<!-- ══ TRENDS & ANALYTICS ══ -->
+<div id="sec-trends" class="section">
+  <div class="trendHeader">
+    <div>
+      <div class="trendTitle">Executive Analytics &amp; Trends</div>
+      <div class="trendSub" id="trendDateRange">Loading saved data…</div>
+    </div>
+    <button class="freset" onclick="loadTrends()">🔄 Refresh</button>
+  </div>
+
+  <!-- Executive KPI cards -->
+  <div class="kpiGrid" id="trendKpis"></div>
+
+  <!-- Headcount trend -->
+  <div class="grid2" style="margin-top:14px">
+    <div class="card"><div class="cardTitle">Headcount Trend (Grand / Staff / Technician)</div><div class="chartWrap"><canvas id="cTrendHC" style="max-height:300px"></canvas></div></div>
+    <div class="card"><div class="cardTitle">Payroll Trend — Proposed vs Actual (AED M)</div><div class="chartWrap"><canvas id="cTrendPay" style="max-height:300px"></canvas></div></div>
+  </div>
+
+  <!-- Notice + SOU trend -->
+  <div class="grid2" style="margin-top:14px">
+    <div class="card"><div class="cardTitle">Notice Period Trend (count &amp; cost)</div><div class="chartWrap"><canvas id="cTrendNotice" style="max-height:300px"></canvas></div></div>
+    <div class="card"><div class="cardTitle">SOU Units — Current Headcount Trend</div><div class="chartWrap"><canvas id="cTrendSOU" style="max-height:300px"></canvas></div></div>
+  </div>
+
+  <!-- Attendance trend (if available) -->
+  <div class="grid2" style="margin-top:14px">
+    <div class="card"><div class="cardTitle">Attendance Rate Trend (% Present)</div><div class="chartWrap"><canvas id="cTrendAtt" style="max-height:300px"></canvas></div></div>
+    <div class="card"><div class="cardTitle">Budget Variance Trend (% over budget)</div><div class="chartWrap"><canvas id="cTrendVar" style="max-height:300px"></canvas></div></div>
+  </div>
+
+  <!-- Data-science insights -->
+  <div class="card" style="margin-top:14px">
+    <div class="cardTitle">📊 Data-Science Insights — Forecast &amp; Anomalies</div>
+    <div id="dsInsights" class="dsBox"></div>
+  </div>
+
+  <!-- Full history table -->
+  <div class="card" style="margin-top:14px">
+    <div class="cardTitle">Upload History — All Saved Reports</div>
+    <div class="tblWrap"><table id="tHistory"><thead><tr><th>Date</th><th>File</th><th class="num">Grand HC</th><th class="num">Actual Payroll</th><th class="num">On Notice</th><th class="num">Notice Cost</th><th>Uploaded</th></tr></thead><tbody id="tbHistory"></tbody></table></div>
+  </div>
+</div>
+
+<!-- ══ ADMIN ══ -->
+<div id="sec-admin" class="section">
+  <!-- Login gate -->
+  <div id="adminLogin" class="adminLogin">
+    <div class="adminCard">
+      <div class="adminIcon">🔒</div>
+      <div class="adminTitle">Admin Access</div>
+      <div class="adminDesc">Enter the admin password to manage uploads and users.</div>
+      <input type="password" id="adminPass" class="adminInput" placeholder="Admin password" onkeydown="if(event.key==='Enter')adminLoginFn()">
+      <button class="adminBtn" onclick="adminLoginFn()">Login</button>
+      <div id="adminErr" class="adminErrMsg"></div>
+    </div>
+  </div>
+
+  <!-- Admin panel (hidden until login) -->
+  <div id="adminPanel" style="display:none">
+    <div class="trendHeader">
+      <div><div class="trendTitle">Admin Control Panel</div><div class="trendSub">Manage saved data &amp; users</div></div>
+      <button class="freset" onclick="adminLogout()">Logout</button>
+    </div>
+
+    <div class="kpiGrid" id="adminStats"></div>
+
+    <div class="grid2" style="margin-top:14px">
+      <div class="card">
+        <div class="cardTitle">Report Uploads <span id="repCount" class="cntBadge"></span></div>
+        <div class="tblWrap"><table id="tAdminReports"><thead><tr><th>Date</th><th>File</th><th class="num">Grand HC</th><th>Uploaded</th><th>Action</th></tr></thead><tbody id="tbAdminReports"></tbody></table></div>
+      </div>
+      <div class="card">
+        <div class="cardTitle">Attendance Uploads <span id="attCount" class="cntBadge"></span></div>
+        <div class="tblWrap"><table id="tAdminAtt"><thead><tr><th>Date</th><th>File</th><th class="num">Total</th><th>Uploaded</th><th>Action</th></tr></thead><tbody id="tbAdminAtt"></tbody></table></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:14px">
+      <div class="cardTitle">User Management</div>
+      <div class="userAdd">
+        <input type="text" id="newUser" class="adminInput" placeholder="New username" style="max-width:200px">
+        <select id="newUserRole" class="fsel"><option value="user">User</option><option value="admin">Admin</option></select>
+        <button class="adminBtn" style="width:auto;padding:8px 16px" onclick="addUser()">+ Add User</button>
+      </div>
+      <div class="tblWrap" style="margin-top:10px"><table id="tUsers"><thead><tr><th>Username</th><th>Role</th><th>Created</th><th>Action</th></tr></thead><tbody id="tbUsers"></tbody></table></div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- INTEL PANEL -->
+<div id="iOverlay" onclick="closeIntel()"></div>
+<div id="iPanel">
+  <div class="iHdr"><div><h2>AI Intelligence</h2><p>SCL Dashboard Data</p></div><button class="iClose" onclick="closeIntel()">✕</button></div>
+  <div class="iBody">
+    <div class="iSecTitle">Key Metrics</div><div id="iInsights"></div>
+    <div class="iSecTitle">Recommended Actions</div><div id="iActions"></div>
+  </div>
+  <div class="iChat">
+    <div class="iChatTitle">Ask About Dashboard Data</div>
+    <div class="chatMsgs" id="chatMsgs"><div class="msg msgA">Hello! Ask me about headcount, payroll, attendance, notice periods or workforce risks.</div></div>
+    <div class="chatRow">
+      <input class="chatIn" id="chatIn" placeholder="Ask about the data..." onkeydown="if(event.key==='Enter')sendChat()">
+      <button class="chatSend" id="chatBtn" onclick="sendChat()">Send</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── DATA ──────────────────────────────────────────────────────────────────────
+const SEED={
+  T:{staffApprHC:6610,staffCurrHC:6655,staffPropSal:53998082,staffCurrSal:54522029,staffNotice:232,staffNoticeCost:1951080,techApprHC:49405,techCurrHC:50515,techPropSal:46551952,techCurrSal:55138330,techNotice:335,techNoticeCost:376420,grandApprHC:56015,grandCurrHC:57170,grandPropSal:100550034,grandCurrSal:109660359,grandNotice:567,grandNoticeCost:2327500,totalActive:0,totalNotice:0,totalPresent:0,totalAbsent:0,totalVacation:0,totalRecords:0,dayShift:0,nightShift:0},
+  STAFF:[
+    {dept:"SOU 1",            g:"Operating Unit",   aHC:1666,cHC:1728,pSal:13494292,cSal:14224395,notice:39,nCost:321900},
+    {dept:"SOU 2",            g:"Operating Unit",   aHC:1825,cHC:1667,pSal:14291616,cSal:12958950,notice:78,nCost:670000},
+    {dept:"SOU 3",            g:"Operating Unit",   aHC:1377,cHC:1774,pSal:10028335,cSal:12999950,notice:56,nCost:443550},
+    {dept:"Infra",            g:"Operating Unit",   aHC:197, cHC:190, pSal:1722924, cSal:1648090, notice:12,nCost:84480},
+    {dept:"Corporate",        g:"Corporate",        aHC:330, cHC:250, pSal:4704392, cSal:3593996, notice:9, nCost:156750},
+    {dept:"Sobha Facades",    g:"Related Entities", aHC:276, cHC:242, pSal:2605400, cSal:2482730, notice:11,nCost:87100},
+    {dept:"Sobha Modular",    g:"Related Entities", aHC:160, cHC:140, pSal:1313850, cSal:1323525, notice:3, nCost:21500},
+    {dept:"Advanced Manufacturing",g:"Related Entities",aHC:137,cHC:105,pSal:1056911,cSal:973250,notice:7,nCost:59500},
+    {dept:"Latinem Landscaping",g:"Related Entities",aHC:32,cHC:30,pSal:313200,cSal:296200,notice:1,nCost:3700},
+    {dept:"Sobha Concrete",   g:"Related Entities", aHC:46, cHC:39, pSal:463618,  cSal:362865,  notice:3, nCost:16000},
+    {dept:"Sobha Crusher",    g:"Related Entities", aHC:11, cHC:12, pSal:106500,  cSal:110000,  notice:0, nCost:0},
+    {dept:"Sobha Precast",    g:"Related Entities", aHC:18, cHC:20, pSal:311000,  cSal:350000,  notice:1, nCost:20000},
+    {dept:"Latinem Facilities Management",g:"Related Entities",aHC:185,cHC:143,pSal:1320750,cSal:1032043,notice:2,nCost:8100},
+    {dept:"Latinem Securities",g:"Related Entities",aHC:73,cHC:43,pSal:269050,cSal:183510,notice:1,nCost:3000},
+    {dept:"Stay By Latinem",  g:"Related Entities", aHC:15, cHC:13, pSal:149745,  cSal:128025,  notice:0, nCost:0}
+  ],
+  TECH:[
+    {dept:"SOU 1",            g:"Operating Unit",   aHC:15222,cHC:13972,pSal:13699919,cSal:14937035,notice:56,nCost:55850},
+    {dept:"SOU 2",            g:"Operating Unit",   aHC:16122,cHC:15128,pSal:14509393,cSal:15704745,notice:105,nCost:110975},
+    {dept:"SOU 3",            g:"Operating Unit",   aHC:11312,cHC:15913,pSal:10181148,cSal:17191260,notice:102,nCost:119950},
+    {dept:"Infra",            g:"Operating Unit",   aHC:1477, cHC:939,  pSal:1329692, cSal:1153950, notice:16,nCost:19400},
+    {dept:"Corporate",        g:"Corporate",        aHC:43,   cHC:39,   pSal:100513,  cSal:93538,   notice:0, nCost:0},
+    {dept:"Sobha Facades",    g:"Related Entities", aHC:1368, cHC:1219, pSal:1736725, cSal:1644960, notice:13,nCost:16700},
+    {dept:"Sobha Modular",    g:"Related Entities", aHC:1500, cHC:1172, pSal:1860759, cSal:1545635, notice:31,nCost:35600},
+    {dept:"Advanced Manufacturing",g:"Related Entities",aHC:362,cHC:373,pSal:434400,cSal:445985,notice:2,nCost:2000},
+    {dept:"Latinem Landscaping",g:"Related Entities",aHC:188,cHC:185,pSal:200050,cSal:199585,notice:2,nCost:2345},
+    {dept:"Sobha Concrete",   g:"Related Entities", aHC:230, cHC:190, pSal:391000,  cSal:351075,  notice:5, nCost:11400},
+    {dept:"Sobha Crusher",    g:"Related Entities", aHC:25,  cHC:32,  pSal:47100,   cSal:61000,   notice:0, nCost:0},
+    {dept:"Sobha Precast",    g:"Related Entities", aHC:2,   cHC:2,   pSal:3800,    cSal:3800,    notice:0, nCost:0},
+    {dept:"Latinem Facilities Management",g:"Related Entities",aHC:871,cHC:724,pSal:892535,cSal:749425,notice:3,nCost:2200},
+    {dept:"Latinem Securities",g:"Related Entities",aHC:682,cHC:627,pSal:1164918,cSal:1056337,notice:0,nCost:0},
+    {dept:"Stay By Latinem",  g:"Related Entities", aHC:0,  cHC:0,  pSal:0,       cSal:0,       notice:0, nCost:0}
+  ],
+  UNITS:{},
+  COMP:{},
+  DESIG:[]
+};
+let D=JSON.parse(JSON.stringify(SEED));
+let attLoaded=false;  // true once an attendance file is uploaded; until then hide attendance KPIs
+let REPORT_DATE=null; // ISO date of the currently displayed Report
+let ATT_DATE=null;    // ISO date of the currently displayed Attendance (kept SEPARATE from report)
+let ATT_LEGACY=false; // true if loaded attendance uses the old SBU grouping (needs re-upload)
+
+// ── Date badge helpers (report & attendance shown independently) ──────────────
+function fmtISO(iso,full=true){ if(!iso) return ''; const d=new Date(iso+'T00:00:00'); return d.toLocaleDateString('en-GB',full?{day:'2-digit',month:'short',year:'numeric'}:{day:'2-digit',month:'short'}); }
+function attDateLabel(){ return ATT_DATE?fmtISO(ATT_DATE):''; }
+function setReportDate(iso){
+  REPORT_DATE=iso||null;
+  const el=document.getElementById('hdrDate');
+  if(el){ if(iso){ el.textContent='Report: '+fmtISO(iso); el.style.display='inline'; } else el.style.display='none'; }
+  const m=document.getElementById('hdrDateMob');
+  if(m){ if(iso){ m.textContent='R: '+fmtISO(iso,false); m.style.display='inline'; } else m.style.display='none'; }
+}
+function setAttDate(iso){
+  ATT_DATE=iso||null;
+  const el=document.getElementById('hdrAttDate');
+  if(el){ if(iso){ el.textContent='Attendance: '+fmtISO(iso); el.style.display='inline'; } else el.style.display='none'; }
+  const m=document.getElementById('hdrAttDateMob');
+  if(m){ if(iso){ m.textContent='A: '+fmtISO(iso,false); m.style.display='inline'; } else m.style.display='none'; }
+}
+
+// ── HELPERS ───────────────────────────────────────────────────────────────────
+Chart.register(ChartDataLabels);
+const fN=(n,d=0)=>n==null?'—':Number(n).toLocaleString('en-US',{minimumFractionDigits:d,maximumFractionDigits:d});
+const fA=n=>n==null?'—':'AED '+(Math.abs(n)>=1e6?(n/1e6).toFixed(2)+'M':Math.abs(n)>=1e3?(n/1e3).toFixed(0)+'K':n.toFixed(0));
+const BL=['#1e3a8a','#1d4ed8','#2563eb','#3b82f6','#60a5fa','#93c5fd','#bfdbfe','#dbeafe'];
+const gBA=n=>{const o=[];for(let i=0;i<n;i++)o.push(BL[i%BL.length]);return o};
+const lDef={labels:{color:'#1e3a8a',font:{family:'Inter',size:10}}};
+const tDef={bodyFont:{family:'Inter'},titleFont:{family:'Inter'}};
+
+function hOpts(lFn){return{indexAxis:'y',responsive:true,maintainAspectRatio:false,layout:{padding:{right:60}},plugins:{legend:lDef,tooltip:tDef,datalabels:{display:true,anchor:'end',align:'end',font:{family:'Inter',size:9,weight:'600'},color:'#1e3a8a',formatter:lFn||(v=>fN(v))}},scales:{x:{ticks:{color:'#374151',font:{family:'Inter',size:9}},grid:{color:'#e8f0fe'}},y:{ticks:{color:'#1e3a8a',font:{family:'Inter',size:9,weight:'500'},maxRotation:0},grid:{display:false}}}}}
+function vOpts(lFn){return{responsive:true,maintainAspectRatio:true,layout:{padding:{top:20}},plugins:{legend:lDef,tooltip:tDef,datalabels:{display:true,anchor:'end',align:'end',font:{family:'Inter',size:9,weight:'600'},color:'#1e3a8a',formatter:lFn||(v=>fN(v))}},scales:{x:{ticks:{color:'#374151',font:{family:'Inter',size:10}},grid:{color:'#e8f0fe'}},y:{ticks:{color:'#374151',font:{family:'Inter',size:9}},grid:{color:'#e8f0fe'}}}}}
+function dOpts(){return{responsive:true,maintainAspectRatio:true,plugins:{legend:{position:'right',labels:{color:'#1e3a8a',font:{family:'Inter',size:10},boxWidth:10,padding:8}},datalabels:{display:true,color:'#fff',font:{family:'Inter',size:9,weight:'700'},formatter:(v,ctx)=>{const t=ctx.dataset.data.reduce((a,b)=>a+b,0);return t>0?((v/t)*100).toFixed(1)+'%':''}}}}}
+
+const cReg={};
+function mkC(id,cfg){
+  const el=document.getElementById(id);
+  if(!el)return;
+  if(cReg[id]){cReg[id].destroy();}
+  cReg[id]=new Chart(el,cfg);
+}
+
+// ── OVERVIEW ──────────────────────────────────────────────────────────────────
+function buildOverview(){
+  const T=D.T;
+  // Report + Attendance dates shown together on the Overview (kept independent)
+  const ovD=document.getElementById('ovDates');
+  if(ovD){
+    ovD.innerHTML=
+      `<span class="ovDateChip">📅 Report: <b>${REPORT_DATE?fmtISO(REPORT_DATE):'—'}</b>${REPORT_DATE?'':' <span class="dim">(none loaded)</span>'}</span>`+
+      `<span class="ovDateChip att">🕑 Attendance: <b>${ATT_DATE?fmtISO(ATT_DATE):'—'}</b>${ATT_DATE?'':' <span class="dim">(none loaded)</span>'}</span>`;
+  }
+  const ap=((T.grandCurrHC-T.grandApprHC)/T.grandApprHC*100).toFixed(1);
+  const sp=((T.grandCurrSal-T.grandPropSal)/T.grandPropSal*100).toFixed(1);
+  const attDen=(T.totalPresent||0)+(T.totalAbsent||0);
+  const att=attDen>0?(T.totalPresent/attDen*100).toFixed(1):'—';
+  // No "Other Entities" in overview KPI breakdown — only Staff and Technician
+  document.getElementById('ovKpi').innerHTML=`
+    <div class="kpiCard"><div class="kpiLabel">Grand Approved HC</div><div class="kpiVal">${fN(T.grandApprHC)}</div><div class="kpiSub">Sanctioned</div><div class="kpiBr"><div class="kpiBrRow"><span>Staff</span><span>${fN(T.staffApprHC)}</span></div><div class="kpiBrRow"><span>Technician</span><span>${fN(T.techApprHC)}</span></div></div></div>
+    <div class="kpiCard"><div class="kpiLabel">Grand Current HC</div><div class="kpiVal">${fN(T.grandCurrHC)}</div><div class="kpiSub">Active + Notice</div><div class="kpiDelta over">+${ap}% over approved</div><div class="kpiBr"><div class="kpiBrRow"><span>Staff</span><span>${fN(T.staffCurrHC)}</span></div><div class="kpiBrRow"><span>Technician</span><span>${fN(T.techCurrHC)}</span></div></div></div>
+    <div class="kpiCard"><div class="kpiLabel">Proposed Payroll</div><div class="kpiVal">${fA(T.grandPropSal)}</div><div class="kpiSub">Monthly budget</div><div class="kpiBr"><div class="kpiBrRow"><span>Staff</span><span>${fA(T.staffPropSal)}</span></div><div class="kpiBrRow"><span>Technician</span><span>${fA(T.techPropSal)}</span></div></div></div>
+    <div class="kpiCard"><div class="kpiVal">${fA(T.grandCurrSal)}</div><div class="kpiLabel">Actual Payroll</div><div class="kpiSub">Monthly spend</div><div class="kpiDelta over">+${sp}% over budget</div><div class="kpiBr"><div class="kpiBrRow"><span>Staff</span><span>${fA(T.staffCurrSal)}</span></div><div class="kpiBrRow"><span>Technician</span><span>${fA(T.techCurrSal)}</span></div></div></div>
+    ${attLoaded
+      ? `<div class="kpiCard"><div class="kpiLabel">Attendance Rate${ATT_DATE?` <span style="color:#0284c7">· ${fmtISO(ATT_DATE,false)}</span>`:''}</div><div class="kpiVal">${att}%</div><div class="kpiSub">${fN(T.totalPresent)} present of ${fN(attDen)} expected</div><div class="kpiBr"><div class="kpiBrRow"><span>Absent</span><span style="color:var(--red)">${fN(T.totalAbsent)}</span></div><div class="kpiBrRow"><span>Vacation</span><span>${fN(T.totalVacation)}</span></div></div></div>`
+      : `<div class="kpiCard" style="opacity:.6"><div class="kpiLabel">Attendance Rate</div><div class="kpiVal" style="font-size:15px;color:#94a3b8">No data</div><div class="kpiSub">Upload Attendance file</div><div class="kpiBr"><div class="kpiBrRow" style="color:#94a3b8"><span>Click "Attendance"</span><span>↑</span></div></div></div>`
+    }`;
+  document.getElementById('sStaffSub').textContent=fN(T.staffCurrHC)+' headcount';
+  document.getElementById('sTechSub').textContent=fN(T.techCurrHC)+' headcount';
+  document.getElementById('sEntSub').textContent=Object.keys(D.COMP).length+' companies';
+  applyOvFilter();
+}
+
+function applyOvFilter(){
+  const T=D.T,vw=document.getElementById('ovView').value,ch=document.getElementById('ovChart').value;
+  document.getElementById('ovHcPayRow').style.display=(ch==='both'||ch==='hc'||ch==='payroll')?'':'none';
+  document.getElementById('ovAttRow').style.display=(attLoaded&&(ch==='both'||ch==='att'))?'':'none';
+  let lbl,ap,cu,pp,ac;
+  if(vw==='staff'){lbl=['Staff'];ap=[T.staffApprHC];cu=[T.staffCurrHC];pp=[+(T.staffPropSal/1e6).toFixed(2)];ac=[+(T.staffCurrSal/1e6).toFixed(2)];}
+  else if(vw==='tech'){lbl=['Technician'];ap=[T.techApprHC];cu=[T.techCurrHC];pp=[+(T.techPropSal/1e6).toFixed(2)];ac=[+(T.techCurrSal/1e6).toFixed(2)];}
+  else{lbl=['Staff','Technician','Total'];ap=[T.staffApprHC,T.techApprHC,T.grandApprHC];cu=[T.staffCurrHC,T.techCurrHC,T.grandCurrHC];pp=[+(T.staffPropSal/1e6).toFixed(2),+(T.techPropSal/1e6).toFixed(2),+(T.grandPropSal/1e6).toFixed(2)];ac=[+(T.staffCurrSal/1e6).toFixed(2),+(T.techCurrSal/1e6).toFixed(2),+(T.grandCurrSal/1e6).toFixed(2)];}
+  if(ch==='both'||ch==='hc')mkC('cOvHc',{type:'bar',data:{labels:lbl,datasets:[{label:'Approved',data:ap,backgroundColor:'#3b82f6',borderRadius:4},{label:'Current',data:cu,backgroundColor:'#1e3a8a',borderRadius:4}]},options:vOpts()});
+  if(ch==='both'||ch==='payroll')mkC('cOvSal',{type:'bar',data:{labels:lbl,datasets:[{label:'Proposed (M)',data:pp,backgroundColor:'#3b82f6',borderRadius:4},{label:'Current (M)',data:ac,backgroundColor:'#1e3a8a',borderRadius:4}]},options:vOpts(v=>v+'M')});
+  if(attLoaded&&(ch==='both'||ch==='att')){
+    const adSuffix = ATT_DATE ? ` — ${fmtISO(ATT_DATE)}` : '';
+    const at=document.getElementById('ovAttTitle'); if(at) at.textContent='Attendance Status'+adSuffix;
+    const st=document.getElementById('ovShiftTitle'); if(st) st.textContent='Shift Distribution'+adSuffix;
+    mkC('cOvAtt',{type:'doughnut',data:{labels:['Present','Absent','Vacation'],datasets:[{data:[T.totalPresent,T.totalAbsent,T.totalVacation],backgroundColor:['#1d4ed8','#dc2626','#93c5fd'],borderWidth:0}]},options:dOpts()});
+    mkC('cOvShift',{type:'doughnut',data:{labels:['Day','Night'],datasets:[{data:[T.dayShift,T.nightShift],backgroundColor:['#1e3a8a','#60a5fa'],borderWidth:0}]},options:dOpts()});
+  }
+}
+
+function resetF(tab){
+  if(tab==='overview'){document.getElementById('ovView').value='all';document.getElementById('ovChart').value='both';applyOvFilter();}
+  else if(tab==='staff'){document.getElementById('sfGroup').value='all';document.getElementById('sfMetric').value='hc';applyStaffF();}
+  else if(tab==='tech'){document.getElementById('tfGroup').value='all';document.getElementById('tfMetric').value='hc';applyTechF();}
+  else if(tab==='ent'){document.getElementById('efComp').value='all';document.getElementById('efMetric').value='total';applyEntF();}
+  else if(tab==='att'){document.getElementById('afUnit').value='all';document.getElementById('afStatus').value='all';document.getElementById('afShift').value='all';applyAttF();}
+  else if(tab==='notice'){document.getElementById('nfCat').value='all';document.getElementById('nfDept').value='all';applyNoticeF();}
+}
+
+// ── STAFF ─────────────────────────────────────────────────────────────────────
+function buildStaff(){
+  const T=D.T;
+  document.getElementById('staffKpi').innerHTML=`
+    <div class="kpiCard"><div class="kpiLabel">Approved HC</div><div class="kpiVal">${fN(T.staffApprHC)}</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Current HC</div><div class="kpiVal">${fN(T.staffCurrHC)}</div><div class="kpiDelta over">+${((T.staffCurrHC-T.staffApprHC)/T.staffApprHC*100).toFixed(1)}%</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Proposed Payroll</div><div class="kpiVal">${fA(T.staffPropSal)}</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Actual Payroll</div><div class="kpiVal">${fA(T.staffCurrSal)}</div><div class="kpiDelta over">+${((T.staffCurrSal-T.staffPropSal)/T.staffPropSal*100).toFixed(1)}%</div></div>`;
+  applyStaffF();
+}
+
+function applyStaffF(){
+  const grp=document.getElementById('sfGroup').value,met=document.getElementById('sfMetric').value;
+  let data=D.STAFF.filter(d=>d.cHC>0||d.aHC>0);
+  if(grp!=='all')data=data.filter(d=>d.g===grp);
+  const isSal=met==='sal';
+  document.getElementById('staffChTitle').textContent=isSal?'Staff Salary by Department':'Staff Headcount by Department';
+  const h=Math.max(data.length*42+50,80);
+  document.getElementById('staffChWrap').style.height=h+'px';
+  mkC('cStaff',{type:'bar',data:{labels:data.map(d=>d.dept),datasets:[
+    {label:isSal?'Proposed':'Approved',data:data.map(d=>isSal?d.pSal:d.aHC),backgroundColor:'#3b82f6',borderRadius:3,barThickness:12},
+    {label:isSal?'Current Sal':'Current HC',data:data.map(d=>isSal?d.cSal:d.cHC),backgroundColor:'#1e3a8a',borderRadius:3,barThickness:12}
+  ]},options:hOpts(isSal?v=>fA(v):null)});
+  const tb=document.getElementById('tbStaff');tb.innerHTML='';
+  // Group rows with group label
+  const groups=['Operating Unit','Corporate','Related Entities'];
+  groups.forEach(g=>{
+    const gd=data.filter(r=>r.g===g);
+    if(!gd.length)return;
+    if(grp==='all')tb.innerHTML+=`<tr><td colspan="8" style="background:var(--bxl);font-size:9px;font-weight:700;color:var(--bm);text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;">${g}</td></tr>`;
+    gd.forEach(d=>{
+      const hv=d.cHC-d.aHC,sv=d.cSal-d.pSal;
+      tb.innerHTML+=`<tr>
+        <td>${d.dept}</td><td>${d.g}</td>
+        <td class="num">${fN(d.aHC)}</td><td class="num">${fN(d.cHC)}</td>
+        <td class="num"><span class="badge ${hv>0?'bRed':'bBlue'}">${hv>=0?'+':''}${fN(hv)}</span></td>
+        <td class="num">${fN(d.pSal)}</td><td class="num">${fN(d.cSal)}</td>
+        <td class="num"><span class="badge ${sv>0?'bRed':sv<0?'bGreen':''}">${sv>=0?'+':''}${fN(sv)}</span></td>
+      </tr>`;
+    });
+  });
+}
+
+// ── TECHNICIAN ────────────────────────────────────────────────────────────────
+function buildTech(){
+  const T=D.T;
+  document.getElementById('techKpi').innerHTML=`
+    <div class="kpiCard"><div class="kpiLabel">Approved HC</div><div class="kpiVal">${fN(T.techApprHC)}</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Current HC</div><div class="kpiVal">${fN(T.techCurrHC)}</div><div class="kpiDelta over">+${((T.techCurrHC-T.techApprHC)/T.techApprHC*100).toFixed(1)}%</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Proposed Payroll</div><div class="kpiVal">${fA(T.techPropSal)}</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Actual Payroll</div><div class="kpiVal">${fA(T.techCurrSal)}</div><div class="kpiDelta over">+${((T.techCurrSal-T.techPropSal)/T.techPropSal*100).toFixed(1)}%</div></div>`;
+  applyTechF();
+}
+
+function applyTechF(){
+  const grp=document.getElementById('tfGroup').value,met=document.getElementById('tfMetric').value;
+  let data=D.TECH.filter(d=>d.cHC>0||d.aHC>0);
+  if(grp!=='all')data=data.filter(d=>d.g===grp);
+  const isSal=met==='sal';
+  document.getElementById('techChTitle').textContent=isSal?'Technician Salary by Department':'Technician Headcount by Department';
+  const h=Math.max(data.length*42+50,80);
+  document.getElementById('techChWrap').style.height=h+'px';
+  mkC('cTech',{type:'bar',data:{labels:data.map(d=>d.dept),datasets:[
+    {label:isSal?'Proposed':'Approved',data:data.map(d=>isSal?d.pSal:d.aHC),backgroundColor:'#3b82f6',borderRadius:3,barThickness:12},
+    {label:isSal?'Current Sal':'Current HC',data:data.map(d=>isSal?d.cSal:d.cHC),backgroundColor:'#1e3a8a',borderRadius:3,barThickness:12}
+  ]},options:hOpts(isSal?v=>fA(v):null)});
+  const tb=document.getElementById('tbTech');tb.innerHTML='';
+  const groups=['Operating Unit','Corporate','Related Entities'];
+  groups.forEach(g=>{
+    const gd=data.filter(r=>r.g===g);
+    if(!gd.length)return;
+    if(grp==='all')tb.innerHTML+=`<tr><td colspan="7" style="background:var(--bxl);font-size:9px;font-weight:700;color:var(--bm);text-transform:uppercase;letter-spacing:.06em;padding:5px 8px;">${g}</td></tr>`;
+    gd.forEach(d=>{
+      const hv=d.cHC-d.aHC;
+      tb.innerHTML+=`<tr><td>${d.dept}</td><td>${d.g}</td><td class="num">${fN(d.aHC)}</td><td class="num">${fN(d.cHC)}</td><td class="num"><span class="badge ${hv>0?'bRed':'bBlue'}">${hv>=0?'+':''}${fN(hv)}</span></td><td class="num">${fN(d.pSal)}</td><td class="num">${fN(d.cSal)}</td></tr>`;
+    });
+  });
+}
+
+// ── ENTITIES ──────────────────────────────────────────────────────────────────
+function buildEnt(){
+  const sel=document.getElementById('efComp');
+  sel.innerHTML='<option value="all">All Companies</option>';
+  Object.keys(D.COMP).forEach(n=>sel.innerHTML+=`<option value="${n}">${n}</option>`);
+  applyEntF();
+}
+
+function applyEntF(){
+  const comp=document.getElementById('efComp').value,met=document.getElementById('efMetric').value;
+  let entries=Object.entries(D.COMP);
+  if(comp!=='all')entries=entries.filter(([n])=>n===comp);
+  const grid=document.getElementById('entKpi');grid.innerHTML='';
+  entries.forEach(([name,d])=>{const s=name.length>22?name.slice(0,22)+'…':name;grid.innerHTML+=`<div class="kpiCard"><div class="kpiLabel" title="${name}">${s}</div><div class="kpiVal">${fN(d.total)}</div><div class="kpiSub">Active: ${fN(d.active)}</div></div>`;});
+  const mMap={total:'Total HC',present:'Present',absent:'Absent'};
+  document.getElementById('entChTitle').textContent='Entity '+mMap[met];
+  const lbl=entries.map(([n])=>n),vals=entries.map(([,d])=>d[met]||0);
+  const h=Math.max(lbl.length*42+50,80);
+  document.getElementById('entChWrap').style.height=h+'px';
+  mkC('cEnt',{type:'bar',data:{labels:lbl,datasets:[{label:mMap[met],data:vals,backgroundColor:met==='absent'?'#dc2626':gBA(lbl.length),borderRadius:4}]},options:hOpts()});
+
+  // Staff entities (Related Entities group only)
+  const seData=D.STAFF.filter(d=>d.g==='Related Entities'&&(d.cHC>0||d.aHC>0));
+  const tb1=document.getElementById('tbEntStaff');tb1.innerHTML='';
+  seData.forEach(d=>{const hv=d.cHC-d.aHC;tb1.innerHTML+=`<tr><td>${d.dept}</td><td>${d.g}</td><td class="num">${fN(d.aHC)}</td><td class="num">${fN(d.cHC)}</td><td class="num"><span class="badge ${hv>0?'bRed':'bBlue'}">${hv>=0?'+':''}${fN(hv)}</span></td></tr>`;});
+
+  // Tech entities
+  const teData=D.TECH.filter(d=>d.g==='Related Entities'&&(d.cHC>0||d.aHC>0));
+  const tb2=document.getElementById('tbEntTech');tb2.innerHTML='';
+  teData.forEach(d=>{const hv=d.cHC-d.aHC;tb2.innerHTML+=`<tr><td>${d.dept}</td><td>${d.g}</td><td class="num">${fN(d.aHC)}</td><td class="num">${fN(d.cHC)}</td><td class="num"><span class="badge ${hv>0?'bRed':'bBlue'}">${hv>=0?'+':''}${fN(hv)}</span></td></tr>`;});
+
+  const cb=document.getElementById('tbComp');cb.innerHTML='';
+  entries.forEach(([name,d])=>{cb.innerHTML+=`<tr><td>${name}</td><td class="num">${fN(d.total)}</td><td class="num">${fN(d.active)}</td><td class="num">${fN(d.present)}</td><td class="num" style="color:var(--red)">${fN(d.absent)}</td><td class="num">${fN(d.vacation)}</td></tr>`;});
+  const db=document.getElementById('tbDesig');db.innerHTML='';
+  D.DESIG.forEach(([n,c])=>{db.innerHTML+=`<tr><td>${n}</td><td class="num">${fN(c)}</td></tr>`;});
+  const ub=document.getElementById('tbUnit');ub.innerHTML='';
+  Object.entries(D.UNITS).forEach(([u,d])=>{ub.innerHTML+=`<tr><td>${u}</td><td class="num">${fN(d.total)}</td><td class="num">${fN(d.active)}</td><td class="num">${fN(d.present)}</td><td class="num" style="color:var(--red)">${fN(d.absent)}</td><td class="num">${fN(d.vacation)}</td><td class="num">${fN(d.day)}</td><td class="num">${fN(d.night)}</td></tr>`;});
+}
+
+// ── ATTENDANCE ────────────────────────────────────────────────────────────────
+function buildAtt(){
+  const sec=document.getElementById('sec-attendance');
+  // Show a clear prompt when no attendance file has been uploaded
+  let banner=document.getElementById('attNoData');
+  if(!attLoaded){
+    if(!banner){
+      banner=document.createElement('div');
+      banner.id='attNoData';
+      banner.style.cssText='background:#eff6ff;border:1.5px dashed #93c5fd;border-radius:10px;padding:30px 20px;text-align:center;color:#1e3a8a;margin-bottom:14px;';
+      banner.innerHTML='<div style="font-size:32px;margin-bottom:8px">📊</div><div style="font-size:15px;font-weight:700;margin-bottom:4px">No attendance data loaded</div><div style="font-size:12px;color:#64748b">Click the <strong>"Attendance"</strong> button in the top bar to upload a daily attendance file (xlsx or csv) with Present / Absent / Vacation data.</div>';
+      sec.insertBefore(banner,sec.firstChild);
+    }
+    banner.style.display='block';
+    // Hide the rest of the attendance content
+    Array.from(sec.children).forEach(ch=>{if(ch.id!=='attNoData')ch.style.display='none';});
+    return;
+  }
+  // Attendance IS loaded — hide banner, show content
+  if(banner) banner.style.display='none';
+  Array.from(sec.children).forEach(ch=>{if(ch.id!=='attNoData')ch.style.display='';});
+
+  const sel=document.getElementById('afUnit');
+  sel.innerHTML='<option value="all">All Units</option>';
+  Object.keys(D.UNITS).forEach(u=>sel.innerHTML+=`<option value="${u}">${u}</option>`);
+  applyAttF();
+}
+
+function applyAttF(){
+  // Attendance date banner + date-stamped section titles (Fix #3)
+  const adFull = ATT_DATE ? fmtISO(ATT_DATE) : '';
+  const adSuffix = ATT_DATE ? ` — ${adFull}` : '';
+  const bn=document.getElementById('attDateBanner');
+  if(bn){
+    if(ATT_LEGACY){
+      bn.style.display='flex';
+      bn.style.background='#fef2f2'; bn.style.borderColor='#fecaca'; bn.style.color='#b91c1c';
+      bn.innerHTML=`⚠️ This saved attendance uses the old <b>SBU</b> grouping. Re-upload the attendance file to refresh it to the correct <b>Unit (SOU)</b> grouping.`;
+    } else if(ATT_DATE){
+      bn.style.display='flex';
+      bn.style.background='#ecfeff'; bn.style.borderColor='#a5f3fc'; bn.style.color='#0e7490';
+      bn.innerHTML=`🕑 Attendance as of <span style="color:#0e7490">${adFull}</span>`;
+    } else bn.style.display='none';
+  }
+  const setTxt=(id,txt)=>{const el=document.getElementById(id);if(el)el.textContent=txt;};
+  setTxt('attBrkTitle','Attendance Breakdown'+adSuffix);
+  setTxt('unitAttTitle','Attendance by Unit'+adSuffix);
+  setTxt('unitDetailTitle','Unit Attendance Detail'+adSuffix);
+
+  const uf=document.getElementById('afUnit').value,sf=document.getElementById('afStatus').value,shf=document.getElementById('afShift').value;
+  let units=Object.entries(D.UNITS);
+  if(uf!=='all')units=units.filter(([u])=>u===uf);
+  let tP=0,tA=0,tV=0,tD=0,tN=0,tAll=0;
+  units.forEach(([,d])=>{tP+=d.present;tA+=d.absent;tV+=d.vacation;tD+=d.day;tN+=d.night;tAll+=d.total;});
+  const dP=sf==='all'||sf==='present'?tP:0,dA=sf==='all'||sf==='absent'?tA:0,dV=sf==='all'||sf==='vacation'?tV:0;
+  const dD=shf==='all'||shf==='day'?tD:0,dNt=shf==='all'||shf==='night'?tN:0;
+  document.getElementById('attPills').innerHTML=`
+    <div class="attPill"><div class="attVal">${fN(tAll)}</div><div class="attLbl">Total</div></div>
+    <div class="attPill"><div class="attVal" style="color:var(--bm)">${fN(dP)}</div><div class="attLbl">Present</div></div>
+    <div class="attPill"><div class="attVal" style="color:var(--red)">${fN(dA)}</div><div class="attLbl">Absent</div></div>
+    <div class="attPill"><div class="attVal">${fN(dV)}</div><div class="attLbl">Vacation</div></div>
+    <div class="attPill"><div class="attVal">${fN(dD)}</div><div class="attLbl">Day Shift</div></div>
+    <div class="attPill"><div class="attVal">${fN(dNt)}</div><div class="attLbl">Night Shift</div></div>`;
+  mkC('cAttBrk',{type:'doughnut',data:{labels:['Present','Absent','Vacation'],datasets:[{data:[dP,dA,dV],backgroundColor:['#1d4ed8','#dc2626','#93c5fd'],borderWidth:0}]},options:dOpts()});
+  mkC('cAttShift',{type:'doughnut',data:{labels:['Day','Night'],datasets:[{data:[dD,dNt],backgroundColor:['#1e3a8a','#60a5fa'],borderWidth:0}]},options:dOpts()});
+  const uk=units.map(([u])=>u);
+  const h=Math.max(uk.length*42+50,80);
+  document.getElementById('unitAttWrap').style.height=h+'px';
+  const ds=[];
+  if(sf==='all'||sf==='present')ds.push({label:'Present',data:units.map(([,d])=>d.present),backgroundColor:'#1d4ed8',borderRadius:3,barThickness:8});
+  if(sf==='all'||sf==='absent')ds.push({label:'Absent',data:units.map(([,d])=>d.absent),backgroundColor:'#dc2626',borderRadius:3,barThickness:8});
+  if(sf==='all'||sf==='vacation')ds.push({label:'Vacation',data:units.map(([,d])=>d.vacation),backgroundColor:'#93c5fd',borderRadius:3,barThickness:8});
+  mkC('cUnitAtt',{type:'bar',data:{labels:uk,datasets:ds},options:hOpts()});
+  const tb=document.getElementById('tbAtt');tb.innerHTML='';
+  units.forEach(([u,d])=>{const p=d.total>0?((d.present/d.total)*100).toFixed(1):'0.0';tb.innerHTML+=`<tr><td>${u}</td><td class="num">${fN(d.total)}</td><td class="num" style="color:var(--bd);font-weight:600">${fN(d.present)}</td><td class="num" style="color:var(--red)">${fN(d.absent)}</td><td class="num">${fN(d.vacation)}</td><td class="num">${p}%</td><td class="num">${fN(d.day)}</td><td class="num">${fN(d.night)}</td></tr>`;});
+}
+
+// ── NOTICE ────────────────────────────────────────────────────────────────────
+function buildNotice(){
+  const all=[...new Set([...D.STAFF.map(d=>d.dept),...D.TECH.map(d=>d.dept)])];
+  const ds=document.getElementById('nfDept');
+  ds.innerHTML='<option value="all">All Departments</option>';
+  all.forEach(dep=>ds.innerHTML+=`<option value="${dep}">${dep}</option>`);
+  applyNoticeF();
+}
+
+function applyNoticeF(){
+  const cat=document.getElementById('nfCat').value,dept=document.getElementById('nfDept').value;
+  const showS=cat==='all'||cat==='staff',showT=cat==='all'||cat==='tech';
+  document.getElementById('nStaffCharts').style.display=showS?'':'none';
+  document.getElementById('nTechCharts').style.display=showT?'':'none';
+  let sD=D.STAFF.filter(d=>d.notice>0),tD=D.TECH.filter(d=>d.notice>0);
+  if(dept!=='all'){sD=sD.filter(d=>d.dept===dept);tD=tD.filter(d=>d.dept===dept);}
+  const totN=(showS?sD.reduce((a,d)=>a+d.notice,0):0)+(showT?tD.reduce((a,d)=>a+d.notice,0):0);
+  const totC=(showS?sD.reduce((a,d)=>a+d.nCost,0):0)+(showT?tD.reduce((a,d)=>a+d.nCost,0):0);
+  document.getElementById('noticeSummary').innerHTML=`
+    <div class="noticeCard"><div class="noticeLbl">Total on Notice</div><div class="noticeVal">${fN(totN)}</div><div class="noticeSub">Filtered</div></div>
+    <div class="noticeCard"><div class="noticeLbl">Notice Cost</div><div class="noticeVal">${fA(totC)}</div><div class="noticeSub">Monthly</div></div>
+    ${showS?`<div class="noticeCard"><div class="noticeLbl">Staff on Notice</div><div class="noticeVal">${fN(sD.reduce((a,d)=>a+d.notice,0))}</div><div class="noticeSub">${fA(sD.reduce((a,d)=>a+d.nCost,0))}/mo</div></div>`:''}
+    ${showT?`<div class="noticeCard"><div class="noticeLbl">Technician on Notice</div><div class="noticeVal">${fN(tD.reduce((a,d)=>a+d.notice,0))}</div><div class="noticeSub">${fA(tD.reduce((a,d)=>a+d.nCost,0))}/mo</div></div>`:''}`;
+  if(showS&&sD.length){
+    const h=Math.max(sD.length*42+50,80);
+    document.getElementById('nScWrap').style.height=h+'px';
+    document.getElementById('nSvWrap').style.height=h+'px';
+    mkC('cNSC',{type:'bar',data:{labels:sD.map(d=>d.dept),datasets:[{label:'On Notice',data:sD.map(d=>d.notice),backgroundColor:'#1d4ed8',borderRadius:3}]},options:hOpts()});
+    mkC('cNSV',{type:'bar',data:{labels:sD.map(d=>d.dept),datasets:[{label:'Cost',data:sD.map(d=>d.nCost),backgroundColor:'#3b82f6',borderRadius:3}]},options:hOpts(v=>fA(v))});
+  }
+  if(showT&&tD.length){
+    const h=Math.max(tD.length*42+50,80);
+    document.getElementById('nTcWrap').style.height=h+'px';
+    document.getElementById('nTvWrap').style.height=h+'px';
+    mkC('cNTC',{type:'bar',data:{labels:tD.map(d=>d.dept),datasets:[{label:'On Notice',data:tD.map(d=>d.notice),backgroundColor:'#1e3a8a',borderRadius:3}]},options:hOpts()});
+    mkC('cNTV',{type:'bar',data:{labels:tD.map(d=>d.dept),datasets:[{label:'Cost',data:tD.map(d=>d.nCost),backgroundColor:'#60a5fa',borderRadius:3}]},options:hOpts(v=>fA(v))});
+  }
+  const tb=document.getElementById('tbNotice');tb.innerHTML='';
+  if(showS)sD.forEach(d=>{tb.innerHTML+=`<tr><td><span class="badge bBlue">Staff</span></td><td>${d.dept}</td><td>${d.g}</td><td class="num">${d.notice>0?`<span class="badge bRed">${d.notice}</span>`:0}</td><td class="num">${fN(d.nCost)}</td></tr>`;});
+  if(showT)tD.forEach(d=>{tb.innerHTML+=`<tr><td><span class="badge bBlue" style="background:#e8f0fe">Technician</span></td><td>${d.dept}</td><td>${d.g}</td><td class="num">${d.notice>0?`<span class="badge bRed">${d.notice}</span>`:0}</td><td class="num">${fN(d.nCost)}</td></tr>`;});
+}
+
+// ── INTEL ─────────────────────────────────────────────────────────────────────
+function buildIntel(){
+  const T=D.T;
+  const hcDiff=T.grandApprHC>0?((T.grandCurrHC-T.grandApprHC)/T.grandApprHC*100).toFixed(1):'N/A';
+  const hcSign=T.grandCurrHC>=T.grandApprHC?'+':'';
+  const payDiff=T.techPropSal>0?((T.techCurrSal-T.techPropSal)/T.techPropSal*100).toFixed(1):'N/A';
+  const attDenom=(T.totalPresent||0)+(T.totalAbsent||0);
+  const attPct=attDenom>0?(T.totalPresent/attDenom*100).toFixed(1):'N/A';
+  document.getElementById('iInsights').innerHTML=`
+    <div class="iInsight"><strong>Headcount:</strong> Current ${fN(T.grandCurrHC)} vs approved ${fN(T.grandApprHC)} — <strong>${hcSign}${hcDiff}%</strong></div>
+    <div class="iInsight"><strong>Technician Payroll:</strong> ${fA(T.techCurrSal)} vs budget ${fA(T.techPropSal)} — <strong>+${payDiff}%</strong></div>
+    <div class="iInsight"><strong>Notice Exposure:</strong> ${fN(T.grandNotice)} employees, <strong>${fA(T.grandNoticeCost)}/month</strong></div>
+    ${attLoaded
+      ? `<div class="iInsight"><strong>Attendance:</strong> ${attPct}% present (${fN(T.totalPresent)} of ${fN(T.totalRecords)})</div>
+         <div class="iInsight"><strong>Absent:</strong> ${fN(T.totalAbsent)} | <strong>Vacation:</strong> ${fN(T.totalVacation)} | Day Shift: ${fN(T.dayShift)} | Night: ${fN(T.nightShift)}</div>`
+      : `<div class="iInsight" style="color:#94a3b8"><strong>Attendance:</strong> No data — upload an Attendance file to see Present/Absent stats</div>`}`;
+  // Dynamic recommended actions based on live data
+  const actions=[];
+  // SOU 3 tech overrun
+  const sou3Tech=D.TECH.find(d=>d.dept&&d.dept.includes('SOU 3'));
+  if(sou3Tech&&sou3Tech.cHC>sou3Tech.aHC){
+    actions.push(`SOU 3 Technician HC ${fN(sou3Tech.cHC)} vs approved ${fN(sou3Tech.aHC)} (+${((sou3Tech.cHC-sou3Tech.aHC)/sou3Tech.aHC*100).toFixed(1)}%) — audit required`);
+  }
+  // Highest notice cost unit
+  const topNotice=[...D.STAFF,...D.TECH].sort((a,b)=>b.nCost-a.nCost)[0];
+  if(topNotice&&topNotice.notice>0) actions.push(`${topNotice.dept} notice: ${fN(topNotice.notice)} employees, ${fA(topNotice.nCost)}/month cost`);
+  // Tech payroll overrun
+  if(T.techCurrSal>T.techPropSal) actions.push(`Technician payroll overrun ${fA(T.techCurrSal-T.techPropSal)} excess/month`);
+  // Attendance risk — measured against present+absent (people expected to work)
+  const attBase=(T.totalPresent||0)+(T.totalAbsent||0);
+  if(attBase>0&&(T.totalAbsent/attBase)>0.15) actions.push(`High absence rate: ${fN(T.totalAbsent)} absent (${(T.totalAbsent/attBase*100).toFixed(1)}%) — investigate`);
+  if(actions.length===0) actions.push('All metrics within normal ranges.');
+  document.getElementById('iActions').innerHTML=actions.map((a,i)=>`<div class="iAction"><div class="iActNum">${i+1}</div><div>${a}</div></div>`).join('');
+}
+
+function openIntel(){document.getElementById('iOverlay').classList.add('open');document.getElementById('iPanel').classList.add('open');}
+function closeIntel(){document.getElementById('iOverlay').classList.remove('open');document.getElementById('iPanel').classList.remove('open');}
+
+// ── AI CHAT ───────────────────────────────────────────────────────────────────
+function getCtx(){
+  const T=D.T;
+  const attPct=((T.totalPresent||0)+(T.totalAbsent||0))>0?(T.totalPresent/((T.totalPresent||0)+(T.totalAbsent||0))*100).toFixed(1):'N/A';
+  const techPayPct=T.techPropSal>0?((T.techCurrSal-T.techPropSal)/T.techPropSal*100).toFixed(1):'N/A';
+  return `You are an AI assistant for the SCL Manpower Analytics Dashboard of SOBHA Construction Group. Only answer questions about the dashboard data. For anything else say: "That question is outside the scope of this dashboard."
+
+DATA (as of ${document.getElementById('hdrDate').textContent||'26 May 2026'}):
+HC: Grand Approved ${fN(T.grandApprHC)}, Current ${fN(T.grandCurrHC)} | Staff: Appr ${fN(T.staffApprHC)}, Curr ${fN(T.staffCurrHC)} | Technician: Appr ${fN(T.techApprHC)}, Curr ${fN(T.techCurrHC)}
+PAYROLL: Grand Proposed ${fA(T.grandPropSal)}, Actual ${fA(T.grandCurrSal)} | Staff: ${fA(T.staffPropSal)} vs ${fA(T.staffCurrSal)} | Technician: ${fA(T.techPropSal)} vs ${fA(T.techCurrSal)} (+${techPayPct}%)
+NOTICE: Total ${fN(T.grandNotice)}, Cost ${fA(T.grandNoticeCost)}/mo | Staff ${fN(T.staffNotice)} (${fA(T.staffNoticeCost)}/mo) | Technician ${fN(T.techNotice)} (${fA(T.techNoticeCost)}/mo)
+ATTENDANCE: Present ${fN(T.totalPresent)} (${attPct}%) | Absent ${fN(T.totalAbsent)} | Vacation ${fN(T.totalVacation)} | Day ${fN(T.dayShift)} | Night ${fN(T.nightShift)}
+STAFF DEPTS:
+${D.STAFF.map(d=>`${d.dept} [${d.g}]: Approved HC ${d.aHC}, Current HC ${d.cHC}, Proposed Sal ${fA(d.pSal)}, Current Sal ${fA(d.cSal)}, Notice ${d.notice}`).join('\n')}
+TECH DEPTS:
+${D.TECH.map(d=>`${d.dept} [${d.g}]: Approved HC ${d.aHC}, Current HC ${d.cHC}, Proposed Sal ${fA(d.pSal)}, Current Sal ${fA(d.cSal)}, Notice ${d.notice}`).join('\n')}
+UNITS: ${Object.entries(D.UNITS).map(([u,d])=>`${u}: Total ${d.total}, Present ${d.present}, Absent ${d.absent}`).join(' | ')}`;
+}
+
+const chatHist=[];
+async function sendChat(){
+  const inp=document.getElementById('chatIn'),q=inp.value.trim();if(!q)return;inp.value='';
+  const msgs=document.getElementById('chatMsgs'),btn=document.getElementById('chatBtn');
+  const um=document.createElement('div');um.className='msg msgU';um.textContent=q;msgs.appendChild(um);
+  const ty=document.createElement('div');ty.className='msg msgT';ty.textContent='Analyzing...';msgs.appendChild(ty);
+  msgs.scrollTop=msgs.scrollHeight;
+  btn.disabled=true;btn.textContent='...';inp.disabled=true;
+  chatHist.push({role:'user',content:q});
+
+  let ans=null, lastErr='';
+
+  // Send the full conversation so the AI keeps context across turns
+  const convo=[{role:'system',content:getCtx()},...chatHist];
+
+  // PRIMARY PATH: call our own server proxy (/api/chat) when hosted (Railway etc.).
+  // This avoids browser CORS issues ("Failed to fetch") and keeps the key server-side.
+  const isHosted = location.protocol==='http:'||location.protocol==='https:';
+  if(isHosted){
+    try{
+      const res=await fetch('/api/chat',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({messages:convo})
+      });
+      const data=await res.json();
+      if(data.reply) ans=data.reply.trim();
+      else if(data.error){ lastErr=data.error; if(data.hint) lastErr+=' — '+data.hint; }
+    }catch(e){ lastErr='proxy: '+(e.message||'fetch failed'); }
+  }
+
+  // FALLBACK PATH: direct browser → OpenRouter (used when opened as a local file,
+  // or if the proxy is unavailable).
+  if(!ans){
+    const OR_KEY=window.OPENROUTER_KEY||'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';
+    const OR_MODELS=[
+      'deepseek/deepseek-chat-v3-0324:free',
+      'meta-llama/llama-3.3-70b-instruct:free',
+      'google/gemini-2.0-flash-exp:free',
+      'qwen/qwen-2.5-72b-instruct:free',
+      'mistralai/mistral-small-3.2-24b-instruct:free'
+    ];
+    for(const model of OR_MODELS){
+      if(ans) break;
+      try{
+        const res=await fetch('https://openrouter.ai/api/v1/chat/completions',{
+          method:'POST',
+          headers:{
+            'Content-Type':'application/json',
+            'Authorization':'Bearer '+OR_KEY,
+            'HTTP-Referer':location.origin||'https://scl-dashboard.up.railway.app',
+            'X-Title':'SCL Manpower Dashboard'
+          },
+          body:JSON.stringify({model,max_tokens:700,temperature:0.3,messages:convo})
+        });
+        const data=await res.json();
+        if(data.error){ lastErr=data.error.message||JSON.stringify(data.error); continue; }
+        const txt=data.choices?.[0]?.message?.content;
+        if(txt&&txt.trim()) ans=txt.trim(); else lastErr='Empty response from '+model;
+      }catch(e){ lastErr=e.message||'Network error'; }
+    }
+  }
+
+  if(!ans){
+    const onFile = location.protocol==='file:';
+    if(onFile){
+      ans='⚠️ The AI assistant needs the server to run.\n\n'+
+          'You opened this page as a local file (file://), so the browser blocks the AI request for security reasons.\n\n'+
+          'To use Intelligence:\n'+
+          '1. Open a terminal in the project folder\n'+
+          '2. Run:  npm install\n'+
+          '3. Run:  npm start\n'+
+          '4. Open  http://localhost:3000  in your browser\n\n'+
+          'On Railway it works automatically once deployed.';
+    } else {
+      ans='⚠️ AI unavailable'+(lastErr?' — '+lastErr:'')+'.\n\n'+
+          'Checklist:\n'+
+          '• Open  /api/health  on your site — it should show "ok":true and "gemini":true\n'+
+          '• Set GEMINI_KEY in Railway → Variables (get a key at aistudio.google.com → Get API key; it starts with "AIza")\n'+
+          '• OpenRouter is the fallback — its free models are rate-limited, so retry after a moment\n'+
+          '• If /api/health does not load at all, the server isn\u2019t running (check Railway → Deployments → Logs)';
+    }
+  }
+
+  chatHist.push({role:'assistant',content:ans});
+  msgs.removeChild(ty);
+  const am=document.createElement('div');am.className='msg msgA';am.textContent=ans;msgs.appendChild(am);
+  msgs.scrollTop=msgs.scrollHeight;
+  btn.disabled=false;btn.textContent='Send';inp.disabled=false;inp.focus();
+}
+
+// ── TAB / SUBSEC ──────────────────────────────────────────────────────────────
+const built={},ssBuilt={};
+function showTab(name,el){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));el.classList.add('active');
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById('sec-'+name).classList.add('active');
+  if(name==='ste'){showSS(null);return;}
+  if(name==='trends'){loadTrends();return;}
+  if(name==='admin'){initAdmin();return;}
+  if(!built[name]){built[name]=true;if(name==='attendance')buildAtt();else if(name==='notice')buildNotice();}
+}
+function showSS(name){
+  document.getElementById('steSelector').style.display=name?'none':'block';
+  ['staff','tech','ent'].forEach(n=>document.getElementById('ss-'+n).classList.toggle('active',n===name));
+  if(name&&!ssBuilt[name]){ssBuilt[name]=true;if(name==='staff')buildStaff();else if(name==='tech')buildTech();else if(name==='ent')buildEnt();}
+}
+
+// ── SORT ──────────────────────────────────────────────────────────────────────
+const sState={};
+function sortT(id,col){
+  const tbl=document.getElementById(id),tb=tbl.querySelector('tbody'),rows=Array.from(tb.querySelectorAll('tr')).filter(r=>r.cells.length>2);
+  const key=id+col,asc=sState[key]!==true;sState[key]=asc;
+  tbl.querySelectorAll('thead th').forEach((th,i)=>{th.classList.toggle('sorted',i===col);th.textContent=th.textContent.replace(' ↑',' ↓').replace(' ↓','')+(i===col?(asc?' ↑':' ↓'):'');});
+  rows.sort((a,b)=>{const av=a.cells[col]?a.cells[col].innerText.replace(/[^0-9.\-]/g,''):'',bv=b.cells[col]?b.cells[col].innerText.replace(/[^0-9.\-]/g,''):'';const an=parseFloat(av),bn=parseFloat(bv);if(!isNaN(an)&&!isNaN(bn))return asc?an-bn:bn-an;return asc?av.localeCompare(bv):bv.localeCompare(av);});
+  rows.forEach(r=>tb.appendChild(r));
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// UPLOAD HANDLERS
+// Two separate buttons:
+//   1. "Report" → xlsx/xlsb with SUMMARY sheet (headcount + salary + notice)
+//   2. "Attendance" → xlsx/csv with Sheet1 raw rows (Present/Absent/Vacation)
+// ══════════════════════════════════════════════════════════════════════════════
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function readFileAsBuffer(file){
+  return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsArrayBuffer(file);});
+}
+function readFileAsText(file){
+  return new Promise((res,rej)=>{const r=new FileReader();r.onload=e=>res(e.target.result);r.onerror=rej;r.readAsText(file);});
+}
+
+// ── REPORT UPLOAD (xlsb / xlsx / xls) ────────────────────────────────────────
+// Detects SUMMARY sheet → parses Staff & Technician sections
+async function handleReportUpload(e){
+  const file=e.target.files[0]; e.target.value=''; if(!file) return;
+  const loading=showUploadToast('⏳ Loading report…');
+  try{
+    const buf=await readFileAsBuffer(file);
+    const wb=XLSX.read(new Uint8Array(buf),{type:'array'});
+    parseReportWorkbook(wb,file.name);
+  }catch(err){
+    hideUploadToast(loading);
+    alert('❌ Could not read file: '+err.message);
+  }
+}
+
+function parseReportWorkbook(wb,fname){
+  // Find SUMMARY sheet
+  const sheetName = wb.SheetNames.find(s=>s.toUpperCase()==='SUMMARY')
+    || wb.SheetNames.find(s=>s.toUpperCase().includes('SUMMARY'))
+    || wb.SheetNames[0];
+  const ws = wb.Sheets[sheetName];
+  const raw = XLSX.utils.sheet_to_json(ws,{header:1,defval:null,raw:true});
+
+  // Extract date from title cell (row 0, any column)
+  const titleCell = (raw[0]||[]).find(c=>c&&typeof c==='string'&&(c.includes('Manpower')||c.includes('SCL')));
+  if(titleCell){
+    const m=titleCell.match(/(\d{1,2})\s+(\w+)\s+(\d{4})/);
+    if(m) setReportDate(toISODate(m[0]));
+  }
+
+  const staffDepts=[], techDepts=[];
+  let mode=null;
+  let grandStaff=null, grandTech=null, grandTotal=null;
+
+  // Rows to SKIP - only SUB TOTAL (header rows like "Operating Unit"/"Related Entities"
+  // are caught separately by the no-numeric-data check, so we must NOT substring-match
+  // "OPERATING UNIT" here — that would wrongly skip "Sobha Operating Unit - SOU 1/2/3").
+  const SKIP_C1 = ['SUB TOTAL'];
+  // (Previously excluded 'Technician Residence' — now included so totals match the file exactly)
+
+  for(const row of raw){
+    if(!row||row.every(c=>c==null)) continue;
+
+    const c0 = row[0]!=null ? String(row[0]).trim() : '';
+    const c1 = row[1]!=null ? String(row[1]).trim() : '';
+    const c1u = c1.toUpperCase();
+    const c0u = c0.toUpperCase();
+
+    // ── Section switches ──────────────────────────────────────────
+    if(c0u==='STAFF'){    mode='staff'; continue; }
+    if(c0u==='TECHNICIAN'){mode='tech';  continue; }
+
+    // ── Grand total rows ──────────────────────────────────────────
+    if(c1u.includes('GRAND TOTAL - STAFF')){ grandStaff=row; continue; }
+    if(c1u.includes('GRAND TOTAL - TECHNICIAN')){ grandTech=row; continue; }
+    if(c1u.includes('GRAND TOTAL')){ grandTotal=row; continue; }
+
+    // ── Skip structural/header rows ───────────────────────────────
+    if(SKIP_C1.some(s=>c1u.includes(s))) continue;
+    // Skip section-header rows (exact match): "Operating Unit", "Related Entities", "Corporate" header
+    // These have NO numeric data, so the next check catches them. But guard explicitly too:
+    const c1clean=c1u.trim();
+    if((c1clean==='OPERATING UNIT'||c1clean==='RELATED ENTITIES')&&(row[2]==null||row[3]==null)) continue;
+    // Skip company banner rows (SOBHA CONSTRUCTIONS LLC, etc.) - have c0 text but no numbers
+    if(row[2]==null && row[3]==null) continue;
+    // Skip roman numeral section headers like I, II, III
+    if(/^I{1,3}V?$/.test(c0)) continue;
+
+    // ── Must have a dept name and numeric data ────────────────────
+    if(!c1 || row[2]==null || row[3]==null) continue;
+
+    // ── Determine group ───────────────────────────────────────────
+    let grp='Operating Unit';
+    if(c1.toLowerCase().includes('corporate')||c1.toLowerCase().includes('technician residence')) grp='Corporate';
+    else if(!c1.includes('SOU')&&!c1.toLowerCase().includes('infra')){
+      const relatedKeywords=['Façades','Facades','Modular','Manufacturing','Landscaping',
+                             'Concrete','Precast','Crusher','Facilities Management',
+                             'Securities','Stay By','Latinem'];
+      if(relatedKeywords.some(k=>c1.includes(k))) grp='Related Entities';
+    }
+
+    const dept = c1.replace(/^Sobha Operating Unit - /,'').trim();
+    const r = rowToEntry(row);
+    staffDepts.length; // just a no-op to avoid linting
+
+    const entry={dept,g:grp,aHC:r.aHC,cHC:r.cHC,pSal:r.pSal,cSal:r.cSal,notice:r.notice,nCost:r.nCost};
+    if(mode==='staff') staffDepts.push(entry);
+    else if(mode==='tech') techDepts.push(entry);
+  }
+
+  if(!staffDepts.length&&!techDepts.length){
+    alert('❌ Could not parse staff/tech data.\nMake sure you are uploading the Manpower Summary Report (xlsb/xlsx) with a SUMMARY sheet.');
+    return;
+  }
+
+  // Apply parsed dept arrays
+  if(staffDepts.length) D.STAFF=staffDepts;
+  if(techDepts.length) D.TECH=techDepts;
+
+  // Apply grand totals
+  const applyGT=(src,pre)=>{
+    if(!src) return;
+    const e=rowToEntry(src);
+    D.T[pre+'ApprHC']=e.aHC; D.T[pre+'CurrHC']=e.cHC;
+    D.T[pre+'PropSal']=e.pSal; D.T[pre+'CurrSal']=e.cSal;
+    D.T[pre+'Notice']=e.notice; D.T[pre+'NoticeCost']=e.nCost;
+  };
+  applyGT(grandStaff,'staff');
+  applyGT(grandTech,'tech');
+
+  const gt=grandTotal||(grandStaff&&grandTech?[null,null,
+    (rowToEntry(grandStaff).aHC+rowToEntry(grandTech).aHC),
+    (rowToEntry(grandStaff).cHC+rowToEntry(grandTech).cHC),
+    (rowToEntry(grandStaff).pSal+rowToEntry(grandTech).pSal),
+    (rowToEntry(grandStaff).cSal+rowToEntry(grandTech).cSal),
+    (rowToEntry(grandStaff).notice+rowToEntry(grandTech).notice),
+    (rowToEntry(grandStaff).nCost+rowToEntry(grandTech).nCost)
+  ]:null);
+  if(gt){
+    const e=rowToEntry(gt);
+    D.T.grandApprHC=e.aHC; D.T.grandCurrHC=e.cHC;
+    D.T.grandPropSal=e.pSal; D.T.grandCurrSal=e.cSal;
+    D.T.grandNotice=e.notice; D.T.grandNoticeCost=e.nCost;
+  }
+
+  document.getElementById('upBadgeReport').style.display='inline';
+  rebuildAll();
+  showUploadToast(`✅ Report loaded: Grand HC ${fN(D.T.grandCurrHC)} (Staff ${fN(D.T.staffCurrHC)} + Tech ${fN(D.T.techCurrHC)}). Saving to database…`);
+  saveReportToDB(fname);
+}
+
+function rowToEntry(row){
+  return {
+    aHC:Math.round(num(row[2])), cHC:Math.round(num(row[3])),
+    pSal:Math.round(num(row[4])), cSal:Math.round(num(row[5])),
+    notice:Math.round(num(row[6])), nCost:Math.round(num(row[7]))
+  };
+}
+
+// ── ATTENDANCE UPLOAD (xlsx / xls / csv) ──────────────────────────────────────
+// Supports:
+//   • xlsx with Sheet1 (raw employee rows) - uses Status column
+//   • xlsx with Sheet2 (pivot table by Unit) - reads aggregated counts
+//   • csv with raw employee rows
+async function handleAttendanceUpload(e){
+  const file=e.target.files[0]; e.target.value=''; if(!file) return;
+  const ext=file.name.split('.').pop().toLowerCase();
+  const loading=showUploadToast('⏳ Loading attendance…');
+  try{
+    if(ext==='csv'){
+      const text=await readFileAsText(file);
+      parseAttCSV(text,file.name);
+    } else {
+      const buf=await readFileAsBuffer(file);
+      const wb=XLSX.read(new Uint8Array(buf),{type:'array',cellDates:true});
+      parseAttWorkbook(wb,file.name);
+    }
+  }catch(err){
+    hideUploadToast(loading);
+    alert('❌ Could not read file: '+err.message);
+  }
+}
+
+function parseAttWorkbook(wb,fname){
+  // The file has Sheet2 (pivot summary) and Sheet1 (raw 50k employee rows).
+  // Sheet2 contains "Count of EMPLOYEECODE" in a cell which is a FALSE match.
+  // Fix: STRICT detection — raw data sheet must have EMPLOYEECODE as an exact
+  // column header (first row of the sheet), not buried in a cell value.
+
+  let rawSheetName=null;
+  let pivotSheetName=null;
+
+  // Priority 1: look for a sheet whose FIRST row has exact column "EMPLOYEECODE"
+  for(const sn of wb.SheetNames){
+    const ws=wb.Sheets[sn];
+    const firstRow=(XLSX.utils.sheet_to_json(ws,{header:1,defval:null})[0]||[])
+                   .map(h=>String(h||'').trim().toUpperCase());
+    // Must be an exact column name match, not a substring like "Count of EMPLOYEECODE"
+    if(firstRow.includes('EMPLOYEECODE')){
+      rawSheetName=sn; break;
+    }
+  }
+
+  // Priority 2: look for sheet with Employee Name + Status as exact column headers
+  if(!rawSheetName){
+    for(const sn of wb.SheetNames){
+      const ws=wb.Sheets[sn];
+      const firstRow=(XLSX.utils.sheet_to_json(ws,{header:1,defval:null})[0]||[])
+                     .map(h=>String(h||'').trim().toUpperCase());
+      if(firstRow.includes('STATUS')&&firstRow.includes('SHIFT')&&firstRow.includes('UNIT')){
+        rawSheetName=sn; break;
+      }
+    }
+  }
+
+  // Identify pivot sheet (has "Row Labels" header)
+  for(const sn of wb.SheetNames){
+    if(sn===rawSheetName) continue;
+    const ws=wb.Sheets[sn];
+    const preview=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+    for(let ri=0;ri<Math.min(preview.length,8);ri++){
+      const row=(preview[ri]||[]).map(h=>String(h||'').trim().toUpperCase());
+      if(row.includes('ROW LABELS')&&row.includes('PRESENT')&&row.includes('ABSENT')){
+        pivotSheetName=sn; break;
+      }
+    }
+    if(pivotSheetName) break;
+  }
+
+  if(rawSheetName){
+    const ws=wb.Sheets[rawSheetName];
+    const rows=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+    if(rows.length>0){ parseAttRows(rows,fname); return; }
+  }
+
+  if(pivotSheetName){
+    const ws=wb.Sheets[pivotSheetName];
+    const raw=XLSX.utils.sheet_to_json(ws,{header:1,defval:null});
+    if(parsePivotSheet(raw,fname)) return;
+  }
+
+  alert('❌ No usable attendance data found.\nPlease upload the Manpower Report xlsx (Sheet1 must have EMPLOYEECODE, Status, Shift, Unit columns).');
+}
+
+function parseAttCSV(text,fname){
+  const lines=text.split(/\r?\n/).filter(l=>l.trim());
+  if(lines.length<2){alert('❌ Empty CSV');return;}
+  // Smart CSV split (handles quoted fields)
+  const splitCSV=line=>{const r=[];let cur='',inQ=false;for(const c of line){if(c==='"'){inQ=!inQ;}else if(c===','&&!inQ){r.push(cur.trim());cur='';}else cur+=c;}r.push(cur.trim());return r;};
+  const headers=splitCSV(lines[0]).map(h=>h.replace(/^"|"$/g,''));
+  const rows=[];
+  for(let i=1;i<lines.length;i++){
+    const vals=splitCSV(lines[i]).map(v=>v.replace(/^"|"$/g,''));
+    if(vals.length<3) continue;
+    const obj={};headers.forEach((h,idx)=>obj[h]=vals[idx]||'');
+    rows.push(obj);
+  }
+  parseAttRows(rows,fname);
+}
+
+function parseAttRows(rows,fname){
+  if(!rows.length){alert('❌ No rows found.');return;}
+  const keys=Object.keys(rows[0]);
+  // Find a column by name. IMPORTANT: prefer an EXACT (case-insensitive) header match
+  // before falling back to a substring match. Without this, fc('Unit') would match
+  // "Business Unit" (which holds SBU 1/2/3 labels) because it appears before the real
+  // "Unit" column. We want the real "Unit" column (SOU 1/2/3 + entities), matching the
+  // official Sheet2 pivot — never the SBU breakdown.
+  const fc=(...opts)=>{
+    for(const o of opts){ const k=keys.find(k=>k.toLowerCase()===o.toLowerCase()); if(k) return k; }
+    for(const o of opts){ const k=keys.find(k=>k.toLowerCase().includes(o.toLowerCase())); if(k) return k; }
+    return null;
+  };
+
+  const cSt=fc('Employment Status','Emp Status');
+  const cSh=fc('Shift');
+  const cUnit=fc('Unit');
+  const cComp=fc('Company','Entity');
+
+  // Find attendance status column - look for one with Present/Absent/Vacation values
+  // Could be named 'Status' but not 'Employment Status'
+  const cAtt=keys.find(k=>{
+    if(k.toLowerCase().includes('employment')) return false; // skip Employment Status
+    const sample=rows.slice(0,20).map(r=>String(r[k]||'').toLowerCase());
+    return sample.some(v=>v==='present'||v==='absent'||v==='vacation');
+  })||fc('Status');
+
+  if(!cAtt){
+    alert('❌ Cannot find attendance Status column.\nNeed a column with values: Present / Absent / Vacation');return;
+  }
+
+  // Detect date from filename (handles _ , space or - separators) — ATTENDANCE date only
+  const dateM=fname.match(/(\d{1,2})[_\s-]+([A-Za-z]+)[_\s-]+(\d{4})/);
+  if(dateM) setAttDate(toISODate(`${dateM[1]} ${dateM[2]} ${dateM[3]}`));
+
+  const uMap={}, cMap={};
+  let tP=0,tA=0,tV=0,tDay=0,tNight=0,tAct=0,tNotice=0;
+  const total=rows.length;
+
+  for(const row of rows){
+    const attVal=String(row[cAtt]||'').toLowerCase();
+    const st=cSt?String(row[cSt]||'').toLowerCase():'';
+    const sh=cSh?String(row[cSh]||'').toLowerCase():'';
+    const unit=cUnit?String(row[cUnit]||'').trim():'Unknown';
+    const comp=cComp?String(row[cComp]||'').trim():'Unknown';
+
+    const isP=attVal==='present', isA=attVal==='absent', isV=attVal==='vacation';
+    const isDay=sh.includes('day'), isNight=sh.includes('night');
+    const isNotice=st.includes('notice');
+
+    if(isP) tP++; else if(isA) tA++; else if(isV) tV++;
+    if(isDay) tDay++; else if(isNight) tNight++;
+    if(isNotice) tNotice++; else tAct++;
+
+    // Aggregate by unit
+    if(unit){
+      if(!uMap[unit]) uMap[unit]={total:0,present:0,absent:0,vacation:0,day:0,night:0,active:0,notice:0};
+      uMap[unit].total++;
+      if(isP) uMap[unit].present++; if(isA) uMap[unit].absent++; if(isV) uMap[unit].vacation++;
+      if(isDay) uMap[unit].day++; if(isNight) uMap[unit].night++;
+      if(isNotice) uMap[unit].notice++; else uMap[unit].active++;
+    }
+    // Aggregate by company
+    if(comp){
+      if(!cMap[comp]) cMap[comp]={total:0,present:0,absent:0,vacation:0,active:0,notice:0};
+      cMap[comp].total++;
+      if(isP) cMap[comp].present++; if(isA) cMap[comp].absent++; if(isV) cMap[comp].vacation++;
+      if(isNotice) cMap[comp].notice++; else cMap[comp].active++;
+    }
+  }
+
+  D.UNITS=uMap; D.COMP=cMap;
+  ATT_LEGACY=false;
+  attLoaded=true;
+  D.T.totalRecords=total; D.T.totalActive=tAct; D.T.totalNotice=tNotice;
+  D.T.totalPresent=tP; D.T.totalAbsent=tA; D.T.totalVacation=tV;
+  D.T.dayShift=tDay; D.T.nightShift=tNight;
+
+  document.getElementById('upBadgeAtt').style.display='inline';
+  rebuildAll();
+  showUploadToast(`✅ Attendance loaded: ${fN(total)} employees | Present: ${fN(tP)} | Absent: ${fN(tA)} | Vacation: ${fN(tV)}. Saving…`);
+  saveAttendanceToDB(fname);
+}
+
+// Parse Sheet2-style pivot table (pre-aggregated by Unit)
+// Structure (Sheet2):
+//   Row 0-1: blank
+//   Row 2: ['Count of EMPLOYEECODE', 'Column Labels', ...]
+//   Row 3: [null, 'Day', null, null, 'Day Total', 'Night', null, null, 'Night Total', 'Grand Total']
+//   Row 4: ['Row Labels', 'Present', 'Absent', 'Vacation', null, 'Present', 'Absent', 'Vacation', null, null]
+//   Row 5+: [unit, dayP, dayA, dayV, dayTotal, nightP, nightA, nightV, nightTotal, grandTotal]
+function parsePivotSheet(raw,fname){
+  let headerRow=-1;
+  for(let i=0;i<raw.length;i++){
+    const row=raw[i]||[];
+    // The data header row has 'Row Labels' in col 0
+    if(row.some(c=>String(c||'').trim().toUpperCase()==='ROW LABELS')){
+      headerRow=i; break;
+    }
+  }
+  if(headerRow<0) return false;
+
+  const dateM=fname.match(/(\d{1,2})[_\s-]([A-Za-z]+)[_\s-](\d{4})/);
+  if(dateM) setAttDate(toISODate(`${dateM[1]} ${dateM[2]} ${dateM[3]}`));
+
+  const uMap={};
+  let tP=0,tA=0,tV=0,tDay=0,tNight=0,total=0;
+
+  for(let i=headerRow+1;i<raw.length;i++){
+    const row=raw[i]; if(!row||!row[0]) continue;
+    const unit=String(row[0]||'').trim();
+    if(!unit||unit.toUpperCase().includes('GRAND TOTAL')) continue;
+
+    // Columns: 0=unit, 1=dayP, 2=dayA, 3=dayV, 4=dayTotal, 5=nightP, 6=nightA, 7=nightV, 8=nightTotal, 9=grandTotal
+    const dP=num(row[1]),dA=num(row[2]),dV=num(row[3]),dTot=num(row[4]);
+    const nP=num(row[5]),nA=num(row[6]),nV=num(row[7]),nTot=num(row[8]);
+    const gt=num(row[9])||(dTot+nTot);
+
+    uMap[unit]={total:gt,present:dP+nP,absent:dA+nA,vacation:dV+nV,
+                day:dTot,night:nTot,active:gt,notice:0};
+    tP+=dP+nP; tA+=dA+nA; tV+=dV+nV;
+    tDay+=dTot; tNight+=nTot; total+=gt;
+  }
+
+  if(!Object.keys(uMap).length) return false;
+
+  D.UNITS=uMap;
+  attLoaded=true;
+  D.T.totalRecords=total; D.T.totalPresent=tP; D.T.totalAbsent=tA; D.T.totalVacation=tV;
+  D.T.dayShift=tDay; D.T.nightShift=tNight;
+
+  document.getElementById('upBadgeAtt').style.display='inline';
+  rebuildAll();
+  showUploadToast(`✅ Attendance: ${fN(total)} employees | Present: ${fN(tP)} | Absent: ${fN(tA)} | Vacation: ${fN(tV)}. Saving…`);
+  saveAttendanceToDB(fname);
+  return true;
+}
+
+// ── Shared helpers ─────────────────────────────────────────────────────────────
+function v2s(v){return v!=null?String(v).trim():'';}
+function num(v){const n=parseFloat(v);return isNaN(n)?0:n;}
+
+function rebuildAll(){
+  // Destroy all existing charts so they properly re-render
+  Object.keys(cReg).forEach(id=>{try{cReg[id].destroy();}catch(e){}delete cReg[id];});
+
+  // Clear all build flags
+  Object.keys(built).forEach(k=>delete built[k]);
+  Object.keys(ssBuilt).forEach(k=>delete ssBuilt[k]);
+
+  // Always rebuild overview + intel
+  built['overview']=true;
+  buildOverview();
+  buildIntel();
+
+  // Re-build whichever tab is currently visible
+  const activeTab=document.querySelector('.tab.active');
+  if(activeTab){
+    const onClick=activeTab.getAttribute('onclick')||'';
+    const m=onClick.match(/showTab\('(\w+)'/);
+    const tabName=m?m[1]:'overview';
+    if(tabName==='attendance'){built['attendance']=true;buildAtt();}
+    else if(tabName==='notice'){built['notice']=true;buildNotice();}
+    else if(tabName==='ste'){
+      // Re-build whichever sub-section is active
+      const activeSS=document.querySelector('#ss-staff.active,#ss-tech.active,#ss-ent.active');
+      if(activeSS){
+        const ssName=activeSS.id.replace('ss-','');
+        ssBuilt[ssName]=true;
+        if(ssName==='staff')buildStaff();
+        else if(ssName==='tech')buildTech();
+        else if(ssName==='ent')buildEnt();
+      }
+    }
+  }
+}
+
+let _toastTimeout=null;
+function showUploadToast(msg){
+  let t=document.getElementById('uploadToast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='uploadToast';
+    t.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1e3a8a;color:#fff;padding:10px 20px;border-radius:8px;font-size:13px;font-weight:600;z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.3);transition:opacity .3s;max-width:90vw;text-align:center;';
+    document.body.appendChild(t);
+  }
+  t.textContent=msg;
+  t.style.opacity='1';
+  clearTimeout(_toastTimeout);
+  if(msg.startsWith('✅')){
+    _toastTimeout=setTimeout(()=>{t.style.opacity='0';},4000);
+  }
+  return t;
+}
+function hideUploadToast(el){if(el)el.style.opacity='0';}
+
+
+// ── PIN LOCK ──────────────────────────────────────────────────────────────────
+const CORRECT_PIN='1111';
+let pinEntry='';
+
+function pinPress(digit){
+  if(pinEntry.length>=4)return;
+  pinEntry+=digit;
+  updateDots();
+  if(pinEntry.length===4) setTimeout(checkPin,150);
+}
+function pinBack(){
+  pinEntry=pinEntry.slice(0,-1);
+  updateDots();
+  document.getElementById('pinError').textContent='';
+}
+function pinClear(){
+  pinEntry='';
+  updateDots();
+  document.getElementById('pinError').textContent='';
+}
+function updateDots(){
+  for(let i=0;i<4;i++){
+    document.getElementById('d'+i).classList.toggle('filled',i<pinEntry.length);
+  }
+}
+function checkPin(){
+  if(pinEntry===CORRECT_PIN){
+    const lock=document.getElementById('lockScreen');
+    lock.style.transition='opacity .4s';
+    lock.style.opacity='0';
+    setTimeout(()=>lock.style.display='none',400);
+  }else{
+    document.getElementById('pinError').textContent='Incorrect PIN. Try again.';
+    document.querySelectorAll('.pinDot').forEach(d=>d.classList.add('shake'));
+    setTimeout(()=>{
+      document.querySelectorAll('.pinDot').forEach(d=>d.classList.remove('shake'));
+      pinEntry='';
+      updateDots();
+    },400);
+  }
+}
+
+// Support keyboard input on desktop
+document.addEventListener('keydown',e=>{
+  if(document.getElementById('lockScreen').style.display==='none')return;
+  if(e.key>='0'&&e.key<='9')pinPress(e.key);
+  else if(e.key==='Backspace')pinBack();
+  else if(e.key==='Escape')pinClear();
+});
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded',()=>{built['overview']=true;buildOverview();buildIntel();loadLatestFromDB();});
+
+
+// ════════════════════════════════════════════════════════════════════════════
+// DATABASE INTEGRATION (Supabase via server proxy)
+// ════════════════════════════════════════════════════════════════════════════
+let TRENDS_REPORTS=[], TRENDS_ATT=[];
+
+// Convert header date text like "28 May 2026" → ISO "2026-05-28"
+function toISODate(txt){
+  if(!txt) return null;
+  const months={jan:'01',feb:'02',mar:'03',apr:'04',may:'05',jun:'06',jul:'07',aug:'08',sep:'09',oct:'10',nov:'11',dec:'12'};
+  const m=String(txt).match(/(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})/);
+  if(!m) return null;
+  const d=m[1].padStart(2,'0'), mo=months[m[2].slice(0,3).toLowerCase()], y=m[3];
+  return mo?`${y}-${mo}-${d}`:null;
+}
+
+async function saveReportToDB(fname){
+  const iso=toISODate(document.getElementById('hdrDate').textContent);
+  if(!iso){showUploadToast('⚠️ Could not detect report date — not saved to DB');return;}
+  const T=D.T;
+  const payload={
+    report_date:iso, file_name:fname,
+    grand_appr_hc:T.grandApprHC, grand_curr_hc:T.grandCurrHC,
+    grand_prop_sal:T.grandPropSal, grand_curr_sal:T.grandCurrSal,
+    grand_notice:T.grandNotice, grand_notice_cost:T.grandNoticeCost,
+    staff_appr_hc:T.staffApprHC, staff_curr_hc:T.staffCurrHC,
+    staff_prop_sal:T.staffPropSal, staff_curr_sal:T.staffCurrSal,
+    staff_notice:T.staffNotice, staff_notice_cost:T.staffNoticeCost,
+    tech_appr_hc:T.techApprHC, tech_curr_hc:T.techCurrHC,
+    tech_prop_sal:T.techPropSal, tech_curr_sal:T.techCurrSal,
+    tech_notice:T.techNotice, tech_notice_cost:T.techNoticeCost,
+    staff_depts:D.STAFF, tech_depts:D.TECH
+  };
+  try{
+    const r=await fetch('/api/report/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(d.ok){ showUploadToast(`✅ Report saved to database for ${iso}. View Trends tab for analytics.`); populateDateSelector(); }
+    else showUploadToast('⚠️ Saved locally but DB error: '+(d.error||'unknown'));
+  }catch(e){ showUploadToast('⚠️ Saved locally. DB unavailable: '+e.message); }
+}
+
+async function saveAttendanceToDB(fname){
+  const iso=ATT_DATE||toISODate(document.getElementById('hdrAttDate').textContent);
+  if(!iso){ showUploadToast('⚠️ Attendance: could not detect date — not saved to DB'); return; }
+  const T=D.T;
+  const payload={
+    att_date:iso, file_name:fname,
+    total_records:T.totalRecords, total_present:T.totalPresent,
+    total_absent:T.totalAbsent, total_vacation:T.totalVacation,
+    day_shift:T.dayShift, night_shift:T.nightShift, units:D.UNITS
+  };
+  try{
+    const r=await fetch('/api/attendance/save',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const d=await r.json();
+    if(d.ok){ showUploadToast(`✅ Attendance saved to database for ${iso}.`); populateDateSelector(); }
+    else showUploadToast('⚠️ Attendance saved locally but DB error: '+(d.error||'unknown'));
+  }catch(e){ showUploadToast('⚠️ Attendance saved locally. DB unavailable: '+e.message); }
+}
+
+// On page load — pull latest report from DB so dashboard shows last uploaded data
+async function loadLatestFromDB(){
+  try{
+    const r=await fetch('/api/report/latest');
+    const d=await r.json();
+    if(d.data){
+      applyReportRow(d.data);
+      showUploadToast(`📂 Loaded latest saved report: ${d.data.report_date}`);
+    }
+  }catch(e){/* DB not configured — use seed */}
+  try{
+    const r=await fetch('/api/attendance/latest');
+    const d=await r.json();
+    if(d.data) applyAttendanceRow(d.data);
+  }catch(e){}
+  populateDateSelector();
+}
+
+// Populate TWO independent dropdowns: one for Report dates, one for Attendance dates.
+// Report and attendance are kept entirely separate — picking one never changes the other.
+async function populateDateSelector(){
+  let repDates=[], attDates=[];
+  try{ repDates=((await (await fetch('/api/report/dates')).json()).dates)||[]; }catch(e){}
+  try{ attDates=((await (await fetch('/api/attendance/dates')).json()).dates)||[]; }catch(e){}
+
+  const buildOpts=(dates,kind)=>{
+    const icon = kind==='report' ? '📅' : '🕑';
+    const word = kind==='report' ? 'Report' : 'Attendance';
+    if(!dates.length) return `<option value="">${icon} No ${word.toLowerCase()} dates</option>`;
+    const sorted=[...new Set(dates)].sort().reverse();
+    const groups={};
+    sorted.forEach(iso=>{ const d=new Date(iso+'T00:00:00'); const k=d.toLocaleDateString('en-GB',{month:'long',year:'numeric'}); (groups[k]=groups[k]||[]).push(iso); });
+    let html=`<option value="">${icon} ${word} date…</option><option value="__latest__">⟳ Latest ${word.toLowerCase()}</option>`;
+    Object.keys(groups).forEach(my=>{
+      html+=`<optgroup label="${my}">`;
+      groups[my].forEach(iso=>{ const d=new Date(iso+'T00:00:00'); const label=d.toLocaleDateString('en-GB',{weekday:'short',day:'2-digit',month:'short',year:'numeric'}); html+=`<option value="${iso}">${label}</option>`; });
+      html+='</optgroup>';
+    });
+    return html;
+  };
+
+  syncDateSelectors(buildOpts(repDates,'report'), buildOpts(attDates,'attendance'));
+}
+
+// User picked a REPORT date → load ONLY the report (HC / payroll / notice). Attendance untouched.
+async function viewReportDate(iso){
+  if(!iso) return;
+  try{
+    let d;
+    if(iso==='__latest__') d=(await (await fetch('/api/report/latest')).json()).data;
+    else d=(await (await fetch('/api/report/by-date/'+iso)).json()).data;
+    if(d){ applyReportRow(d); showUploadToast(`📂 Report loaded for ${d.report_date}`); }
+    else showUploadToast(`⚠️ No report saved for ${iso}`);
+  }catch(e){ showUploadToast('⚠️ Error loading report: '+e.message); }
+}
+
+// User picked an ATTENDANCE date → load ONLY the attendance. Report untouched.
+async function viewAttendanceDate(iso){
+  if(!iso) return;
+  try{
+    let a;
+    if(iso==='__latest__') a=(await (await fetch('/api/attendance/latest')).json()).data;
+    else a=(await (await fetch('/api/attendance/by-date/'+iso)).json()).data;
+    if(a){ applyAttendanceRow(a); showUploadToast(`📂 Attendance loaded for ${a.att_date}`); }
+    else showUploadToast(`⚠️ No attendance saved for ${iso}`);
+  }catch(e){ showUploadToast('⚠️ Error loading attendance: '+e.message); }
+}
+
+// Apply a DB report row into the live D structure + rebuild
+function applyReportRow(row){
+  D.STAFF=row.staff_depts||D.STAFF;
+  D.TECH=row.tech_depts||D.TECH;
+  const T=D.T;
+  T.grandApprHC=row.grand_appr_hc; T.grandCurrHC=row.grand_curr_hc;
+  T.grandPropSal=row.grand_prop_sal; T.grandCurrSal=row.grand_curr_sal;
+  T.grandNotice=row.grand_notice; T.grandNoticeCost=row.grand_notice_cost;
+  T.staffApprHC=row.staff_appr_hc; T.staffCurrHC=row.staff_curr_hc;
+  T.staffPropSal=row.staff_prop_sal; T.staffCurrSal=row.staff_curr_sal;
+  T.staffNotice=row.staff_notice; T.staffNoticeCost=row.staff_notice_cost;
+  T.techApprHC=row.tech_appr_hc; T.techCurrHC=row.tech_curr_hc;
+  T.techPropSal=row.tech_prop_sal; T.techCurrSal=row.tech_curr_sal;
+  T.techNotice=row.tech_notice; T.techNoticeCost=row.tech_notice_cost;
+  // set REPORT date (independent of attendance)
+  setReportDate(row.report_date);
+  document.getElementById('upBadgeReport').style.display='inline';
+  rebuildAll();
+}
+function applyAttendanceRow(row){
+  attLoaded=true;
+  D.UNITS=row.units||{};
+  // Flag legacy data saved under the old "Business Unit" (SBU) grouping so it can be
+  // surfaced for re-upload rather than silently displayed.
+  ATT_LEGACY=Object.keys(D.UNITS).some(k=>/^\s*sbu\b/i.test(k));
+  const T=D.T;
+  T.totalRecords=row.total_records; T.totalPresent=row.total_present;
+  T.totalAbsent=row.total_absent; T.totalVacation=row.total_vacation;
+  T.dayShift=row.day_shift; T.nightShift=row.night_shift;
+  setAttDate(row.att_date);
+  document.getElementById('upBadgeAtt').style.display='inline';
+  rebuildAll();
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// TRENDS & ANALYTICS
+// ════════════════════════════════════════════════════════════════════════════
+async function loadTrends(){
+  try{
+    const [r1,r2]=await Promise.all([fetch('/api/report/all'),fetch('/api/attendance/all')]);
+    TRENDS_REPORTS=(await r1.json()).data||[];
+    TRENDS_ATT=(await r2.json()).data||[];
+  }catch(e){ TRENDS_REPORTS=[]; TRENDS_ATT=[]; }
+  renderTrends();
+}
+
+function fmtD(iso){ const d=new Date(iso+'T00:00:00'); return d.toLocaleDateString('en-GB',{day:'2-digit',month:'short'}); }
+
+function renderTrends(){
+  const R=TRENDS_REPORTS;
+  const range=document.getElementById('trendDateRange');
+  if(!R.length){
+    range.textContent='No saved data yet. Upload report files (they auto-save to the database).';
+    document.getElementById('trendKpis').innerHTML='<div class="kpiCard"><div class="kpiLabel">Status</div><div class="kpiVal" style="font-size:15px;color:#94a3b8">No data</div><div class="kpiSub">Upload a report to begin</div></div>';
+    document.getElementById('dsInsights').innerHTML='<div class="dsItem"><span class="dsIcon">ℹ️</span><span>Upload at least 2 report files on different dates to unlock trend analysis, forecasts and anomaly detection.</span></div>';
+    document.getElementById('tbHistory').innerHTML='';
+    return;
+  }
+  const first=R[0], last=R[R.length-1];
+  range.innerHTML=`${R.length} report${R.length>1?'s':''} saved &nbsp;|&nbsp; ${fmtD(first.report_date)} → ${fmtD(last.report_date)} <span class="latestBadge">LATEST: ${fmtD(last.report_date)}</span>`;
+
+  // Executive KPI cards (based on latest + change vs previous)
+  const prev=R.length>1?R[R.length-2]:null;
+  const delta=(cur,pre)=>pre==null?'':(cur-pre>=0?'▲ +':'▼ ')+fN(cur-pre);
+  const dCol=(cur,pre)=>pre==null?'#64748b':(cur>pre?'var(--red)':cur<pre?'#16a34a':'#64748b');
+  document.getElementById('trendKpis').innerHTML=`
+    <div class="kpiCard"><div class="kpiLabel">Latest Grand HC</div><div class="kpiVal">${fN(last.grand_curr_hc)}</div><div class="kpiSub" style="color:${dCol(last.grand_curr_hc,prev?prev.grand_curr_hc:null)}">${prev?delta(last.grand_curr_hc,prev.grand_curr_hc)+' vs prev':'First record'}</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Latest Actual Payroll</div><div class="kpiVal">${fA(last.grand_curr_sal)}</div><div class="kpiSub" style="color:${dCol(last.grand_curr_sal,prev?prev.grand_curr_sal:null)}">${prev?(last.grand_curr_sal>=prev.grand_curr_sal?'▲':'▼')+' '+fA(Math.abs(last.grand_curr_sal-prev.grand_curr_sal)):'First record'}</div></div>
+    <div class="kpiCard"><div class="kpiLabel">On Notice (latest)</div><div class="kpiVal">${fN(last.grand_notice)}</div><div class="kpiSub" style="color:${dCol(last.grand_notice,prev?prev.grand_notice:null)}">${prev?delta(last.grand_notice,prev.grand_notice)+' vs prev':'First record'}</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Budget Variance</div><div class="kpiVal">${((last.grand_curr_sal-last.grand_prop_sal)/last.grand_prop_sal*100).toFixed(1)}%</div><div class="kpiSub" style="color:var(--red)">Over budget</div></div>
+    <div class="kpiCard"><div class="kpiLabel">HC vs Approved</div><div class="kpiVal">${((last.grand_curr_hc-last.grand_appr_hc)/last.grand_appr_hc*100).toFixed(1)}%</div><div class="kpiSub" style="color:var(--red)">Over sanctioned</div></div>`;
+
+  const labels=R.map(r=>fmtD(r.report_date));
+
+  // HC trend — STACKED AREA: Staff (bottom) + Technician (top); the stack height = Grand HC.
+  // This shows both workforce composition AND the grand total in one readable chart, and
+  // avoids the old problem where Grand (~57k) crushed Staff (~6.6k) flat against the axis.
+  mkC('cTrendHC',{type:'line',data:{labels,datasets:[
+    {label:'Staff',data:R.map(r=>r.staff_curr_hc),borderColor:'#1d4ed8',backgroundColor:'rgba(29,78,216,.55)',tension:.3,fill:true,pointRadius:3,pointHoverRadius:5},
+    {label:'Technician',data:R.map(r=>r.tech_curr_hc),borderColor:'#60a5fa',backgroundColor:'rgba(96,165,250,.45)',tension:.3,fill:true,pointRadius:3,pointHoverRadius:5}
+  ]},options:{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+    plugins:{legend:lDef,datalabels:{display:false},
+      tooltip:{...tDef,callbacks:{footer:items=>{const i=items[0].dataIndex;return 'Grand total: '+fN(R[i].grand_curr_hc);}}}},
+    scales:{x:{stacked:true,ticks:{color:'#374151',font:{family:'Inter',size:10}},grid:{color:'#eef2ff'}},
+            y:{stacked:true,grace:'10%',ticks:{color:'#374151',font:{family:'Inter',size:10},callback:v=>fN(v)},grid:{color:'#eef2ff'}}}}});
+
+  // Payroll trend — Proposed vs Actual (auto-fit axis so the gap & movement are visible)
+  mkC('cTrendPay',{type:'line',data:{labels,datasets:[
+    {label:'Proposed (M)',data:R.map(r=>+(r.grand_prop_sal/1e6).toFixed(2)),borderColor:'#93c5fd',backgroundColor:'rgba(147,197,253,.15)',borderDash:[6,4],tension:.3,fill:true},
+    {label:'Actual (M)',data:R.map(r=>+(r.grand_curr_sal/1e6).toFixed(2)),borderColor:'#1e3a8a',backgroundColor:'rgba(30,58,138,.12)',tension:.3,fill:true}
+  ]},options:lineOpts(v=>v+'M')});
+
+  // Notice trend — bars = count (zero-based, honest), line = cost on auto-fit right axis
+  mkC('cTrendNotice',{type:'bar',data:{labels,datasets:[
+    {label:'On Notice (count)',data:R.map(r=>r.grand_notice),backgroundColor:'#1d4ed8',yAxisID:'y',borderRadius:4,maxBarThickness:48},
+    {type:'line',label:'Notice Cost (AED M)',data:R.map(r=>+(r.grand_notice_cost/1e6).toFixed(2)),borderColor:'#dc2626',backgroundColor:'#dc2626',yAxisID:'y1',tension:.3,pointRadius:3,pointHoverRadius:5}
+  ]},options:dualOpts()});
+
+  // SOU trend (current HC of SOU 1/2/3 = staff + tech combined per unit)
+  const souVal=(r,sou)=>{
+    const s=(r.staff_depts||[]).find(d=>d.dept===sou);
+    const t=(r.tech_depts||[]).find(d=>d.dept===sou);
+    return (s?s.cHC:0)+(t?t.cHC:0);
+  };
+  mkC('cTrendSOU',{type:'line',data:{labels,datasets:[
+    {label:'SOU 1',data:R.map(r=>souVal(r,'SOU 1')),borderColor:'#1e3a8a',backgroundColor:'#1e3a8a',tension:.3},
+    {label:'SOU 2',data:R.map(r=>souVal(r,'SOU 2')),borderColor:'#3b82f6',backgroundColor:'#3b82f6',tension:.3},
+    {label:'SOU 3',data:R.map(r=>souVal(r,'SOU 3')),borderColor:'#dc2626',backgroundColor:'#dc2626',tension:.3}
+  ]},options:lineOpts()});
+
+  // Attendance trend — proper rate = Present / (Present + Absent). Vacation & unmarked rows
+  // are excluded from the denominator, which fixes the old nonsensical 9–26% "present" values.
+  if(TRENDS_ATT.length){
+    const aLabels=TRENDS_ATT.map(a=>fmtD(a.att_date));
+    const aRate=a=>{const den=(a.total_present||0)+(a.total_absent||0);return den>0?+((a.total_present/den)*100).toFixed(1):null;};
+    const rates=TRENDS_ATT.map(aRate);
+    const valid=rates.filter(v=>v!=null);
+    const aOpts=lineOpts(v=>v+'%');
+    aOpts.scales.y.max=100;
+    aOpts.scales.y.min=valid.length?Math.max(0,Math.floor(Math.min(...valid)-5)):0;
+    delete aOpts.scales.y.grace;
+    mkC('cTrendAtt',{type:'line',data:{labels:aLabels,datasets:[
+      {label:'% Present',data:rates,borderColor:'#16a34a',backgroundColor:'rgba(22,163,74,.12)',tension:.3,fill:true,spanGaps:true}
+    ]},options:aOpts});
+  }else{
+    mkC('cTrendAtt',{type:'line',data:{labels:['No attendance uploaded'],datasets:[{label:'% Present',data:[null],borderColor:'#cbd5e1'}]},options:lineOpts(v=>v+'%')});
+  }
+
+  // Budget variance trend (auto-fit % axis)
+  mkC('cTrendVar',{type:'line',data:{labels,datasets:[
+    {label:'% Over Budget',data:R.map(r=>+(((r.grand_curr_sal-r.grand_prop_sal)/r.grand_prop_sal)*100).toFixed(1)),borderColor:'#dc2626',backgroundColor:'rgba(220,38,38,.12)',tension:.3,fill:true}
+  ]},options:lineOpts(v=>v+'%')});
+
+  renderDSInsights(R);
+  renderHistory(R);
+}
+
+// Chart option presets
+// 'grace' auto-pads the value axis around the actual data range so small day-to-day
+// movements are visible instead of rendering as a dead-flat line. A value label is drawn
+// on the latest point of each line so the current figure is always legible.
+function lineOpts(fmt){return{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+  elements:{point:{radius:3,hoverRadius:5}},
+  plugins:{legend:lDef,tooltip:tDef,datalabels:{
+    display:c=>c.dataset.data.length>0 && c.dataIndex===c.dataset.data.length-1 && c.dataset.data[c.dataIndex]!=null,
+    anchor:'end',align:'top',offset:4,clamp:true,
+    color:c=>c.dataset.borderColor||'#1e3a8a',
+    font:{family:'Inter',size:10,weight:'700'},
+    formatter:v=>v==null?'':(fmt?fmt(v):fN(v))}},
+  scales:{x:{ticks:{color:'#374151',font:{family:'Inter',size:10}},grid:{color:'#eef2ff'}},
+          y:{grace:'15%',ticks:{color:'#374151',font:{family:'Inter',size:10},callback:fmt?(v=>fmt(v)):(v=>fN(v))},grid:{color:'#eef2ff'}}}}}
+function dualOpts(){return{responsive:true,maintainAspectRatio:false,interaction:{mode:'index',intersect:false},
+  plugins:{legend:lDef,tooltip:tDef,datalabels:{
+    anchor:'end',align:'top',offset:4,clamp:true,
+    color:c=>c.dataset.type==='line'?'#dc2626':'#1d4ed8',
+    font:{family:'Inter',size:9,weight:'700'},
+    display:c=>c.dataset.type==='line'?(c.dataIndex===c.dataset.data.length-1):true,
+    formatter:(v,c)=>c.dataset.type==='line'?(v+'M'):fN(v)}},
+  scales:{x:{ticks:{color:'#374151',font:{family:'Inter',size:10}},grid:{display:false}},
+    y:{position:'left',beginAtZero:true,grace:'10%',title:{display:true,text:'On Notice (count)',color:'#1d4ed8',font:{family:'Inter',size:10,weight:'700'}},ticks:{color:'#1d4ed8',font:{family:'Inter',size:10}},grid:{color:'#eef2ff'}},
+    y1:{position:'right',grace:'25%',title:{display:true,text:'Cost (AED M)',color:'#dc2626',font:{family:'Inter',size:10,weight:'700'}},ticks:{color:'#dc2626',font:{family:'Inter',size:10},callback:v=>v+'M'},grid:{display:false}}}}}
+
+// ── Data-science insights: linear forecast + anomaly detection ───────────────
+function renderDSInsights(R){
+  const box=document.getElementById('dsInsights');
+  if(R.length<2){
+    box.innerHTML='<div class="dsItem"><span class="dsIcon">ℹ️</span><span>Upload at least 2 dated reports to unlock forecasts and anomaly detection. Currently '+R.length+' record(s).</span></div>';
+    return;
+  }
+  const items=[];
+  const hc=R.map(r=>r.grand_curr_hc);
+  const notice=R.map(r=>r.grand_notice);
+  const sal=R.map(r=>r.grand_curr_sal);
+
+  // Linear regression forecast (next period) on HC
+  function forecast(arr){
+    const n=arr.length, xs=arr.map((_,i)=>i);
+    const sx=xs.reduce((a,b)=>a+b,0), sy=arr.reduce((a,b)=>a+b,0);
+    const sxy=xs.reduce((a,x,i)=>a+x*arr[i],0), sxx=xs.reduce((a,x)=>a+x*x,0);
+    const slope=(n*sxy-sx*sy)/(n*sxx-sx*sx || 1);
+    const intercept=(sy-slope*sx)/n;
+    return {next:Math.round(slope*n+intercept), slope};
+  }
+  const fHC=forecast(hc), fNotice=forecast(notice);
+
+  // HC forecast
+  const hcTrend=fHC.slope>0?'increasing':fHC.slope<0?'decreasing':'stable';
+  items.push({cls:fHC.slope>0?'warn':'good',icon:'🔮',
+    txt:`<b>Headcount forecast:</b> Trend is ${hcTrend} (${fHC.slope>=0?'+':''}${Math.round(fHC.slope)}/period). Projected next-period Grand HC ≈ <b>${fN(fHC.next)}</b>.`});
+
+  // Notice forecast / risk
+  if(fNotice.slope>0){
+    items.push({cls:'risk',icon:'⚠️',txt:`<b>Notice-period risk rising:</b> on-notice count trending up (+${Math.round(fNotice.slope)}/period). Projected next ≈ <b>${fN(fNotice.next)}</b> employees. Review retention.`});
+  }else{
+    items.push({cls:'good',icon:'✅',txt:`<b>Notice stable/declining:</b> on-notice trend ${Math.round(fNotice.slope)}/period — attrition pressure easing.`});
+  }
+
+  // Anomaly detection (z-score on day-over-day HC change)
+  if(hc.length>=3){
+    const diffs=hc.slice(1).map((v,i)=>v-hc[i]);
+    const mean=diffs.reduce((a,b)=>a+b,0)/diffs.length;
+    const sd=Math.sqrt(diffs.reduce((a,d)=>a+(d-mean)**2,0)/diffs.length)||1;
+    let anomaly=null,maxZ=0;
+    diffs.forEach((d,i)=>{const z=Math.abs((d-mean)/sd);if(z>maxZ){maxZ=z;anomaly={i,d,z};}});
+    if(anomaly&&maxZ>1.5){
+      items.push({cls:'warn',icon:'📍',txt:`<b>Anomaly detected:</b> unusual HC change of ${anomaly.d>=0?'+':''}${fN(anomaly.d)} on ${fmtD(R[anomaly.i+1].report_date)} (${maxZ.toFixed(1)}σ from norm). Worth investigating.`});
+    }else{
+      items.push({cls:'good',icon:'📈',txt:`<b>No major anomalies:</b> headcount changes are within normal day-to-day variation.`});
+    }
+  }
+
+  // Budget pressure
+  const lastVar=((sal[sal.length-1]-R[R.length-1].grand_prop_sal)/R[R.length-1].grand_prop_sal*100);
+  items.push({cls:lastVar>5?'risk':'warn',icon:'💰',
+    txt:`<b>Payroll vs budget:</b> currently <b>${lastVar.toFixed(1)}%</b> over proposed budget (${fA(sal[sal.length-1]-R[R.length-1].grand_prop_sal)}/month excess). ${lastVar>5?'Significant overrun — executive attention advised.':'Within tolerance band.'}`});
+
+  // Tech SOU 3 specific (known overrun)
+  const last=R[R.length-1];
+  const sou3t=(last.tech_depts||[]).find(d=>d.dept==='SOU 3');
+  if(sou3t&&sou3t.cHC>sou3t.aHC){
+    items.push({cls:'risk',icon:'🏗️',txt:`<b>SOU 3 Technician overrun:</b> current ${fN(sou3t.cHC)} vs approved ${fN(sou3t.aHC)} (+${(((sou3t.cHC-sou3t.aHC)/sou3t.aHC)*100).toFixed(0)}%). Largest single-unit variance — audit recommended.`});
+  }
+
+  box.innerHTML=items.map(i=>`<div class="dsItem ${i.cls||''}"><span class="dsIcon">${i.icon}</span><span>${i.txt}</span></div>`).join('');
+}
+
+function renderHistory(R){
+  const tb=document.getElementById('tbHistory');
+  tb.innerHTML=R.slice().reverse().map((r,idx)=>{
+    const isLatest=idx===0;
+    const up=r.uploaded_at?new Date(r.uploaded_at).toLocaleString('en-GB',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+    return `<tr${isLatest?' style="background:#f0fdf4"':''}><td>${fmtD(r.report_date)}${isLatest?' <span class="latestBadge">LATEST</span>':''}</td><td>${r.file_name||'—'}</td><td class="num">${fN(r.grand_curr_hc)}</td><td class="num">${fA(r.grand_curr_sal)}</td><td class="num">${fN(r.grand_notice)}</td><td class="num">${fA(r.grand_notice_cost)}</td><td>${up}</td></tr>`;
+  }).join('');
+}
+
+// ════════════════════════════════════════════════════════════════════════════
+// ADMIN PANEL
+// ════════════════════════════════════════════════════════════════════════════
+let ADMIN_PASS=null;
+
+function initAdmin(){
+  if(ADMIN_PASS){ showAdminPanel(); }
+  else { document.getElementById('adminLogin').style.display='flex'; document.getElementById('adminPanel').style.display='none'; }
+}
+
+async function adminLoginFn(){
+  const pass=document.getElementById('adminPass').value;
+  const err=document.getElementById('adminErr');
+  err.textContent='';
+  try{
+    const r=await fetch('/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:pass})});
+    const d=await r.json();
+    if(d.ok){ ADMIN_PASS=pass; showAdminPanel(); }
+    else err.textContent=d.error||'Wrong password';
+  }catch(e){ err.textContent='Server error: '+e.message; }
+}
+
+function adminLogout(){ ADMIN_PASS=null; document.getElementById('adminPass').value=''; initAdmin(); }
+
+async function showAdminPanel(){
+  document.getElementById('adminLogin').style.display='none';
+  document.getElementById('adminPanel').style.display='block';
+  const H={'x-admin-pass':ADMIN_PASS};
+  // Load reports, attendance, users
+  let reports=[],att=[],users=[];
+  try{ reports=((await (await fetch('/api/report/all')).json()).data)||[]; }catch(e){}
+  try{ att=((await (await fetch('/api/attendance/all')).json()).data)||[]; }catch(e){}
+  try{ users=((await (await fetch('/api/admin/users',{headers:H})).json()).data)||[]; }catch(e){}
+
+  // Stats
+  document.getElementById('adminStats').innerHTML=`
+    <div class="kpiCard"><div class="kpiLabel">Report Uploads</div><div class="kpiVal">${reports.length}</div><div class="kpiSub">${reports.length?fmtD(reports[0].report_date)+' → '+fmtD(reports[reports.length-1].report_date):'none'}</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Attendance Uploads</div><div class="kpiVal">${att.length}</div><div class="kpiSub">${att.length?fmtD(att[att.length-1].att_date)+' latest':'none'}</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Registered Users</div><div class="kpiVal">${users.length}</div><div class="kpiSub">${users.filter(u=>u.role==='admin').length} admin(s)</div></div>
+    <div class="kpiCard"><div class="kpiLabel">Latest Report</div><div class="kpiVal" style="font-size:18px">${reports.length?fmtD(reports[reports.length-1].report_date):'—'}</div><div class="kpiSub">most recent data</div></div>`;
+
+  document.getElementById('repCount').textContent=reports.length;
+  document.getElementById('attCount').textContent=att.length;
+
+  // Report table
+  document.getElementById('tbAdminReports').innerHTML=reports.slice().reverse().map(r=>{
+    const up=r.uploaded_at?new Date(r.uploaded_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):'—';
+    return `<tr><td>${fmtD(r.report_date)}</td><td>${r.file_name||'—'}</td><td class="num">${fN(r.grand_curr_hc)}</td><td>${up}</td><td><button class="delBtn" onclick="delReport('${r.report_date}')">Delete</button></td></tr>`;
+  }).join('')||'<tr><td colspan="5" style="text-align:center;color:#94a3b8">No reports</td></tr>';
+
+  // Attendance table
+  document.getElementById('tbAdminAtt').innerHTML=att.slice().reverse().map(a=>{
+    const up=a.uploaded_at?new Date(a.uploaded_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short'}):'—';
+    return `<tr><td>${fmtD(a.att_date)}</td><td>${a.file_name||'—'}</td><td class="num">${fN(a.total_records)}</td><td>${up}</td><td><button class="delBtn" onclick="delAtt('${a.att_date}')">Delete</button></td></tr>`;
+  }).join('')||'<tr><td colspan="5" style="text-align:center;color:#94a3b8">No attendance</td></tr>';
+
+  // Users table
+  document.getElementById('tbUsers').innerHTML=users.map(u=>{
+    const cr=u.created_at?new Date(u.created_at).toLocaleDateString('en-GB',{day:'2-digit',month:'short',year:'numeric'}):'—';
+    return `<tr><td>${u.username}</td><td><span class="badge ${u.role==='admin'?'bRed':'bBlue'}">${u.role}</span></td><td>${cr}</td><td><button class="delBtn" onclick="delUser(${u.id})">Remove</button></td></tr>`;
+  }).join('')||'<tr><td colspan="4" style="text-align:center;color:#94a3b8">No users</td></tr>';
+}
+
+async function delReport(date){
+  if(!confirm('Delete report for '+date+'? This cannot be undone.'))return;
+  await fetch('/api/admin/report/'+date,{method:'DELETE',headers:{'x-admin-pass':ADMIN_PASS}});
+  showAdminPanel();
+}
+async function delAtt(date){
+  if(!confirm('Delete attendance for '+date+'?'))return;
+  await fetch('/api/admin/attendance/'+date,{method:'DELETE',headers:{'x-admin-pass':ADMIN_PASS}});
+  showAdminPanel();
+}
+async function addUser(){
+  const u=document.getElementById('newUser').value.trim();
+  const role=document.getElementById('newUserRole').value;
+  if(!u){alert('Enter a username');return;}
+  await fetch('/api/admin/users',{method:'POST',headers:{'Content-Type':'application/json','x-admin-pass':ADMIN_PASS},body:JSON.stringify({username:u,role})});
+  document.getElementById('newUser').value='';
+  showAdminPanel();
+}
+async function delUser(id){
+  if(!confirm('Remove this user?'))return;
+  await fetch('/api/admin/users/'+id,{method:'DELETE',headers:{'x-admin-pass':ADMIN_PASS}});
+  showAdminPanel();
+}
+
+
+// ── Mobile toolbar sync ──────────────────────────────────────────────────────
+function syncMobDate(){ /* report & attendance date badges are set directly by setReportDate/setAttDate */ }
+
+// Keep desktop + mobile selectors in sync — report dates and attendance dates separately
+function syncDateSelectors(repHtml, attHtml){
+  ['reportDateSel','reportDateSelMob'].forEach(id=>{ const el=document.getElementById(id); if(el&&repHtml!=null) el.innerHTML=repHtml; });
+  ['attDateSel','attDateSelMob'].forEach(id=>{ const el=document.getElementById(id); if(el&&attHtml!=null) el.innerHTML=attHtml; });
+}
+
+</script>
+</body>
+</html>
